@@ -1,0 +1,39 @@
+# Dependencies
+/vendor/
+/node_modules/
+
+# Environment
+.env
+.env.backup
+.env.*.local
+
+# Frontend build output
+/public/build/
+/public/hot
+
+# Laravel framework cache
+/bootstrap/cache/*.php
+!/bootstrap/cache/.gitkeep
+
+# Storage (keep structure, ignore generated files)
+/storage/app/public/*
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*.log
+
+# Database
+/database/database.sqlite
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Composer
+composer.lock
