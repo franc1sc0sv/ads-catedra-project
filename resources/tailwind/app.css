@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@source "../views";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --color-primary:      #101C5D;
+    --color-secondary:    #569298;
+    --color-accent:       #D4AF37;
+    --color-neutralLight: #F5F5F5;
+    --color-neutralDark:  #333333;
+    --color-coral:        #F97C7C;
+    --font-sans:          'Poppins', sans-serif;
+}
