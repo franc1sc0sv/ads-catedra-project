@@ -3,5 +3,18 @@
     "laravel@laravel": true,
     "laravel-cloud@laravel": true,
     "laravel-nightwatch@laravel": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/spec-integrity.sh"
+          }
+        ]
+      }
+    ]
   }
 }

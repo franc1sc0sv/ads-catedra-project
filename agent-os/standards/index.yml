@@ -1,0 +1,17 @@
+# Agent OS Standards Index
+
+authentication:
+  dual-auth:
+    description: Two parallel auth stacks (JWT for API, session for Web) — strictly separated, share one AuthService
+  role-middleware:
+    description: Route-level role authorization reads role from JWT payload attribute — no DB query
+
+backend:
+  php-architecture:
+    description: Layer structure (Route→FormRequest→Controller→Service→Model→Resource), file placement, PHP 8.x conventions
+  service-interface:
+    description: Every service has a Contracts/ interface; controllers inject the interface, never the concrete class
+
+frontend:
+  role-namespacing:
+    description: Each role owns its full slice (routes, controller, views, nav) — checklist for adding a new role
