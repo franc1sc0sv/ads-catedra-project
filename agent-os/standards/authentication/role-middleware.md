@@ -1,6 +1,6 @@
 ---
 name: Role Middleware (EnsureRole)
-description: Route-level role authorization via jwt_payload attribute — no DB query
+description: Route-level role authorization that reads the role from the authenticated user
 type: project
 ---
 
@@ -10,20 +10,21 @@ Use `role:<value>` middleware to guard routes by role.
 
 ```php
 Route::middleware(['auth', 'role:administrator'])->group(...);
-Route::middleware(['jwt.auth', 'role:pharmacist'])->group(...);
+Route::middleware(['auth', 'role:pharmacist'])->group(...);
 ```
 
-**How it works:**
-- API: reads role from `jwt_payload` request attribute (set by `JwtAuthMiddleware`) — no DB query
-- Web: falls back to `auth()->user()->role->value`
+**Cómo funciona:**
+- El middleware lee `$request->user()?->role?->value` en cada request.
+- Si no hay usuario autenticado o el rol no coincide con los aceptados, devuelve `403 Unauthorized`.
+- Cambiar el rol de un usuario toma efecto en su **siguiente request** (no hay token vigente que esperar).
 
-**Trade-off accepted:** role in JWT is trusted until token expiry. A role change won't take effect until the user's token expires.
-
-Role values (from `UserRole` enum):
+Valores de rol (enum `App\Enums\UserRole`):
 - `administrator`
 - `salesperson`
 - `inventory_manager`
 - `pharmacist`
 
-- Pass multiple roles to allow any: `role:administrator,pharmacist`
-- Never check roles in controllers — always use this middleware.
+**Reglas:**
+- Para permitir varios roles en una ruta: `role:administrator,pharmacist`.
+- Nunca chequear el rol dentro de un controller — siempre vía este middleware.
+- Si una pantalla necesita lógica condicional por rol (e.g. mostrar un botón solo para admin), usar `@can` / `Gate` o un check explícito en la vista, pero la autorización dura sigue siendo el middleware en la ruta.
