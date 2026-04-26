@@ -1,0 +1,336 @@
+// FarmaSys — Database Schema
+// Esta es la fuente de verdad del esquema relacional. Compatible con dbdiagram.io.
+// Auth se maneja con sesiones de Laravel (tabla `sessions` que crea el framework, no se modela aquí).
+
+Enum RolUsuario {
+  ADMINISTRADOR
+  VENDEDOR
+  ENCARGADO_INVENTARIO
+  FARMACEUTICO
+}
+
+Enum CategoriaMedicamento {
+  VENTA_LIBRE
+  REQUIERE_RECETA
+  CONTROLADO
+}
+
+Enum EstadoReceta {
+  PENDIENTE
+  VALIDADA
+  RECHAZADA
+}
+
+Enum MetodoPago {
+  EFECTIVO
+  TARJETA_CREDITO
+  TARJETA_DEBITO
+  TRANSFERENCIA
+}
+
+Enum EstadoVenta {
+  EN_PROCESO
+  COMPLETADA
+  CANCELADA
+}
+
+Enum EstadoPedido {
+  SOLICITADO
+  ENVIADO
+  RECIBIDO
+  CANCELADO
+}
+
+Enum TipoMovimiento {
+  ENTRADA_COMPRA
+  SALIDA_VENTA
+  AJUSTE_MANUAL
+  DEVOLUCION
+  BAJA_VENCIMIENTO
+}
+
+Enum EstadoStripe {
+  PENDIENTE
+  EXITOSA
+  FALLIDA
+  REEMBOLSADA
+}
+
+Enum TipoDatoConfig {
+  INTEGER
+  STRING
+  BOOLEAN
+  DECIMAL
+}
+
+Table CatUsuario {
+  cveUsuario bigint [primary key, increment]
+  cNombreCompleto varchar [not null]
+  cCorreo varchar [not null, unique, note: 'Login del usuario']
+  cContrasenaHash varchar [not null, note: 'Hash bcrypt']
+  eRol RolUsuario [not null]
+  bActivo boolean [not null, default: true]
+  fCreado timestamp [not null, default: `now()`]
+  fActualizado timestamp [not null, default: `now()`]
+
+  indexes {
+    cCorreo [unique]
+    eRol
+  }
+}
+
+Table CatProveedor {
+  cveProveedor integer [primary key, increment]
+  cEmpresa varchar [not null]
+  cTelefono varchar
+  cCorreo varchar
+  cDireccion varchar
+  cRFC varchar [unique, note: 'Registro fiscal']
+  bActivo boolean [not null, default: true]
+  fCreado timestamp [not null, default: `now()`]
+  fActualizado timestamp [not null, default: `now()`]
+
+  indexes {
+    cEmpresa
+    cRFC [unique]
+  }
+}
+
+Table CatCliente {
+  cveCliente bigint [primary key, increment]
+  cNombreCliente varchar [not null]
+  cTelefono varchar
+  cCorreo varchar
+  cDireccion varchar
+  cIdentificacion varchar [unique, note: 'DUI, pasaporte, etc.']
+  bFrecuente boolean [not null, default: false]
+  bActivo boolean [not null, default: true]
+  fCreado timestamp [not null, default: `now()`]
+  fActualizado timestamp [not null, default: `now()`]
+
+  indexes {
+    cNombreCliente
+    cIdentificacion [unique]
+  }
+}
+
+Table CatMedicamento {
+  cveMedicamento bigint [primary key, increment]
+  cNombreProd varchar [not null]
+  cDescripcion varchar
+  cCodigoBarras varchar [unique]
+  nPrecio numeric [not null]
+  nStock integer [not null, default: 0]
+  nStockMinimo integer [not null, default: 10]
+  fVencimiento date [not null]
+  eCategoria CategoriaMedicamento [not null, default: 'VENTA_LIBRE']
+  cveProveedor integer [not null]
+  bActivo boolean [not null, default: true]
+  fCreado timestamp [not null, default: `now()`]
+  fActualizado timestamp [not null, default: `now()`]
+
+  indexes {
+    cNombreProd
+    cCodigoBarras [unique]
+    fVencimiento
+    eCategoria
+    (cveProveedor, bActivo)
+  }
+}
+
+Table Receta {
+  cveReceta bigint [primary key, increment]
+  cNumeroReceta varchar [not null, unique]
+  cNombrePaciente varchar [not null]
+  cNombreMedico varchar [not null]
+  cCedulaMedico varchar [not null]
+  fFechaEmision date [not null]
+  fFechaVencimiento date [not null]
+  eEstado EstadoReceta [not null, default: 'PENDIENTE']
+  cveFarmaceutico bigint
+  fValidacion timestamp
+  cObservaciones varchar
+  fCreado timestamp [not null, default: `now()`]
+
+  indexes {
+    cNumeroReceta [unique]
+    eEstado
+    cveFarmaceutico
+  }
+}
+
+Table RegistroVentas {
+  cveVenta bigint [primary key, increment]
+  fFechaVenta timestamp [not null, default: `now()`]
+  nSubtotal numeric [not null]
+  nImpuesto numeric [not null, default: 0]
+  nTotal numeric [not null]
+  eMetodoPago MetodoPago [not null]
+  eEstado EstadoVenta [not null, default: 'EN_PROCESO']
+  cveCliente bigint [note: 'Nullable para venta rapida']
+  cveVendedor bigint [not null]
+  cveReceta bigint [unique, note: 'Una receta valida una sola venta']
+  fCreado timestamp [not null, default: `now()`]
+  fActualizado timestamp [not null, default: `now()`]
+
+  indexes {
+    fFechaVenta
+    cveCliente
+    cveVendedor
+    eEstado
+    cveReceta [unique]
+    (fFechaVenta, eEstado)
+  }
+}
+
+Table DetalleVenta {
+  cveDetalleVenta bigint [primary key, increment]
+  cveVenta bigint [not null]
+  cveMedicamento bigint [not null]
+  nCantidad integer [not null]
+  nPrecioUnitario numeric [not null, note: 'Congelado al agregar la linea']
+  nSubtotalLinea numeric [not null]
+  fCreado timestamp [not null, default: `now()`]
+
+  indexes {
+    (cveVenta, cveMedicamento) [unique]
+    cveVenta
+    cveMedicamento
+  }
+}
+
+Table PedidoProveedor {
+  cvePedido bigint [primary key, increment]
+  cveProveedor integer [not null]
+  cveUsuarioSolicita bigint [not null]
+  cveUsuarioRecibe bigint
+  fFechaPedido timestamp [not null, default: `now()`]
+  fFechaRecepcion timestamp
+  eEstado EstadoPedido [not null, default: 'SOLICITADO']
+  nTotalEstimado numeric
+  cObservaciones varchar
+  fCreado timestamp [not null, default: `now()`]
+  fActualizado timestamp [not null, default: `now()`]
+
+  indexes {
+    cveProveedor
+    eEstado
+    fFechaPedido
+    cveUsuarioSolicita
+  }
+}
+
+Table DetallePedido {
+  cveDetallePedido bigint [primary key, increment]
+  cvePedido bigint [not null]
+  cveMedicamento bigint [not null]
+  nCantidadSolicitada integer [not null]
+  nCantidadRecibida integer [default: 0]
+  nPrecioCompra numeric [note: 'Estimado al crear; real al recibir']
+  fCreado timestamp [not null, default: `now()`]
+
+  indexes {
+    (cvePedido, cveMedicamento) [unique]
+    cvePedido
+    cveMedicamento
+  }
+}
+
+Table MovimientoInventario {
+  cveMovimiento bigint [primary key, increment]
+  cveMedicamento bigint [not null]
+  eTipoMovimiento TipoMovimiento [not null]
+  nCantidad integer [not null]
+  nStockAnterior integer [not null]
+  nStockNuevo integer [not null]
+  cveUsuario bigint [not null]
+  cveVenta bigint
+  cvePedido bigint
+  cMotivo varchar [note: 'Obligatorio para AJUSTE_MANUAL, BAJA_VENCIMIENTO, DEVOLUCION']
+  fCreado timestamp [not null, default: `now()`]
+
+  indexes {
+    cveMedicamento
+    eTipoMovimiento
+    fCreado
+    cveUsuario
+    (cveMedicamento, fCreado)
+  }
+}
+
+Table AuditoriaAcceso {
+  cveAuditoria bigint [primary key, increment]
+  cveUsuario bigint [note: 'NULL cuando el evento no tiene usuario autenticado, e.g. login fallido']
+  cAccion varchar [not null, note: 'LOGIN_OK, LOGIN_FAIL, LOGOUT, USUARIO_CREADO, RECETA_VALIDADA, etc.']
+  cTablaAfectada varchar [note: 'Nombre de la tabla, e.g. "RegistroVentas"']
+  cRegistroAfectado varchar [note: 'PK del registro afectado, e.g. "cveVenta=1234"']
+  cDetalles varchar [note: 'JSON con before/after o contexto adicional']
+  cDireccionIP varchar
+  fCreado timestamp [not null, default: `now()`]
+
+  indexes {
+    cveUsuario
+    cAccion
+    fCreado
+    (cveUsuario, fCreado)
+  }
+}
+
+Table RegistroStripe {
+  cveRegistroStripe bigint [primary key, increment]
+  cveVenta bigint [not null, unique, note: 'Una venta = un registro Stripe']
+  cChargeId varchar [unique, note: 'Stripe charge ID']
+  cPaymentIntentId varchar [unique, note: 'Stripe payment intent']
+  cIdempotencyKey varchar [not null, unique, note: 'Evita doble cobro por reintentos']
+  cRefundId varchar [unique, note: 'Stripe refund ID cuando se cancela la venta']
+  eEstadoStripe EstadoStripe [not null, default: 'PENDIENTE']
+  nMonto numeric [not null]
+  cMensajeError varchar
+  fProcesado timestamp [note: 'Cuando Stripe confirmo el cobro']
+  fReembolso timestamp [note: 'Cuando se aplico el refund']
+  fCreado timestamp [not null, default: `now()`]
+  fActualizado timestamp [not null, default: `now()`]
+
+  indexes {
+    cveVenta [unique]
+    cChargeId [unique]
+    cPaymentIntentId [unique]
+    cIdempotencyKey [unique]
+    eEstadoStripe
+  }
+}
+
+Table CatConfiguracion {
+  cveConfiguracion bigint [primary key, increment]
+  cClave varchar [not null, unique, note: 'Identificador, e.g. dias_alerta_vencimiento']
+  cValor varchar [not null, note: 'Valor en string, parseado por la app segun cTipoDato']
+  cDescripcion varchar
+  eTipoDato TipoDatoConfig [not null]
+  bEditable boolean [not null, default: true]
+  fCreado timestamp [not null, default: `now()`]
+  fActualizado timestamp [not null, default: `now()`]
+
+  indexes {
+    cClave [unique]
+  }
+}
+
+// RELACIONES (Foreign Keys)
+Ref fk_medicamento_proveedor: CatMedicamento.cveProveedor > CatProveedor.cveProveedor
+Ref fk_receta_farmaceutico: Receta.cveFarmaceutico > CatUsuario.cveUsuario
+Ref fk_venta_cliente: RegistroVentas.cveCliente > CatCliente.cveCliente
+Ref fk_venta_vendedor: RegistroVentas.cveVendedor > CatUsuario.cveUsuario
+Ref fk_venta_receta: RegistroVentas.cveReceta > Receta.cveReceta
+Ref fk_detalle_venta: DetalleVenta.cveVenta > RegistroVentas.cveVenta
+Ref fk_detalle_medicamento: DetalleVenta.cveMedicamento > CatMedicamento.cveMedicamento
+Ref fk_pedido_proveedor: PedidoProveedor.cveProveedor > CatProveedor.cveProveedor
+Ref fk_pedido_solicita: PedidoProveedor.cveUsuarioSolicita > CatUsuario.cveUsuario
+Ref fk_pedido_recibe: PedidoProveedor.cveUsuarioRecibe > CatUsuario.cveUsuario
+Ref fk_detpedido_pedido: DetallePedido.cvePedido > PedidoProveedor.cvePedido
+Ref fk_detpedido_medicamento: DetallePedido.cveMedicamento > CatMedicamento.cveMedicamento
+Ref fk_mov_medicamento: MovimientoInventario.cveMedicamento > CatMedicamento.cveMedicamento
+Ref fk_mov_usuario: MovimientoInventario.cveUsuario > CatUsuario.cveUsuario
+Ref fk_mov_venta: MovimientoInventario.cveVenta > RegistroVentas.cveVenta
+Ref fk_mov_pedido: MovimientoInventario.cvePedido > PedidoProveedor.cvePedido
+Ref fk_auditoria_usuario: AuditoriaAcceso.cveUsuario > CatUsuario.cveUsuario
+Ref fk_stripe_venta: RegistroStripe.cveVenta > RegistroVentas.cveVenta
