@@ -1,10 +1,10 @@
 # Agent OS Standards Index
 
 authentication:
-  dual-auth:
-    description: Two parallel auth stacks (JWT for API, session for Web) — strictly separated, share one AuthService
+  session-auth:
+    description: Single Laravel session-based auth stack — web only, no JWT, no parallel API
   role-middleware:
-    description: Route-level role authorization reads role from JWT payload attribute — no DB query
+    description: Route-level role authorization that reads the role from the authenticated user
 
 backend:
   php-architecture:
