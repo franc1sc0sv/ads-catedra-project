@@ -72,7 +72,13 @@ final class UsuarioController extends Controller
 
     public function toggleActiva(User $usuario): RedirectResponse
     {
-        $this->usuarios->toggleActiva($usuario);
+        try {
+            $this->usuarios->toggleActiva($usuario);
+        } catch (\DomainException $e) {
+            return redirect()
+                ->route('admin.usuarios.index')
+                ->with('error', $e->getMessage());
+        }
 
         $estado = $usuario->is_active ? 'activada' : 'desactivada';
 

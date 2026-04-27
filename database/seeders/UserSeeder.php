@@ -14,6 +14,7 @@ class UserSeeder extends Seeder
     {
         $accounts = [
             ['admin@pharma.test',     'Admin User',     'administrator',     'Admin User'],
+            ['admin2@pharma.test',    'Admin Backup',   'administrator',     'Admin Backup'],
             ['sales@pharma.test',     'Sales User',     'salesperson',       'Sales User'],
             ['inventory@pharma.test', 'Inventory User', 'inventory_manager', 'Inventory User'],
             ['pharmacist@pharma.test', 'Pharmacist User', 'pharmacist',        'Pharmacist User'],

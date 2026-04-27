@@ -102,6 +102,10 @@ final class UsuarioService implements UsuarioServiceInterface
 
     public function toggleActiva(User $user): void
     {
+        if ($user->is_active && $user->role === UserRole::ADMINISTRATOR) {
+            throw new \DomainException('No se puede desactivar a un usuario administrador.');
+        }
+
         $user->is_active = ! $user->is_active;
         $user->save();
     }
