@@ -18,6 +18,8 @@ La venta se persiste como EN_PROCESO desde que se agrega la primera línea, y ca
 
 El precio unitario se congela en la línea cuando el producto se agrega al carrito. Si más tarde el administrador ajusta el precio del medicamento en el catálogo, la venta en curso conserva el precio que el cliente vio al momento de agregarlo, evitando sorpresas al cobrar.
 
+Si el cajero agrega al carrito un producto que ya tiene una línea abierta, el sistema actualiza la cantidad de esa línea existente en lugar de crear una nueva, porque `DetalleVenta` tiene restricción única sobre `(cveVenta, cveMedicamento)`.
+
 El stock se verifica al agregar cada línea: si pide más de lo que hay, el sistema bloquea la cantidad y le muestra cuánto queda, dejándolo ajustar o quitar el producto. Pero el stock no se reserva mientras el carrito está abierto; el descuento real ocurre al cerrar la venta. Si dos cajeros venden la última unidad simultáneamente, el primero que confirma el cobro se la lleva, y el segundo recibe un error al cerrar y debe ajustar la cantidad o quitar la línea para seguir.
 
 ## Skills relevantes
