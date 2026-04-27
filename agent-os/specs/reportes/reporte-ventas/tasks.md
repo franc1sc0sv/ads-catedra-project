@@ -1,0 +1,29 @@
+# Tasks — Reporte de Ventas
+
+- [x] Task 1: Save spec documentation
+- [ ] Task 2: Create `App\Services\Reportes\Contracts\ReporteVentasServiceInterface`
+  - `computeKPIs(array $filters): array` — returns the 5 KPIs (cantidad ventas, ingreso total, ticket promedio, cancelaciones, monto cancelado)
+  - `listVentas(array $filters): LengthAwarePaginator` — filter-aware paginated list
+  - `topProductos(array $filters, int $limit = 10): Collection` — grouped by medicamento, ordered by units desc, completadas only
+  - `exportCsv(array $filters): StreamedResponse` — CSV stream respecting filters
+- [ ] Task 3: Implement `App\Services\Reportes\ReporteVentasService` using SQL aggregates
+  - Default rango = primer día del mes en curso → hoy
+  - Default estado = `completada`
+  - Cancelaciones siempre como métrica separada
+  - Top productos agrupado por `medicamento_id`, sum unidades, order by units desc
+- [ ] Task 4: Bind interface to implementation in `AppServiceProvider`
+- [ ] Task 5: Create `app/Http/Controllers/Web/Reportes/ReporteVentasController.php`
+  - `index(Request $request): View` — validates filters, calls service, returns view with KPIs + paginator + top productos
+  - `export(Request $request): StreamedResponse` — same filters, returns CSV
+  - Thin controller: validated input → service call → response
+- [ ] Task 6: Register routes in `routes/web.php` under `middleware(['auth', 'role:administrator'])`
+  - `GET /admin/reportes/ventas` → `index`
+  - `GET /admin/reportes/ventas/export` → `export`
+- [ ] Task 7: Create view `resources/views/admin/reportes/ventas.blade.php`
+  - Filter form (rango, método de pago, vendedor, estado)
+  - 5 KPI cards
+  - Ventas table (paginated)
+  - Top productos table
+  - Export CSV button (preserves current filters via query string)
+- [ ] Task 8: Add nav link to admin nav component if appropriate
+- [ ] Task 9: Manual smoke test: filters recalculate, cancelled excluded from ingreso, CSV export matches table

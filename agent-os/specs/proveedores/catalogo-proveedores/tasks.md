@@ -1,0 +1,36 @@
+# Tasks: Catálogo de Proveedores
+
+- [x] **Task 1** — Save spec documentation in `agent-os/specs/proveedores/catalogo-proveedores/`.
+- [ ] **Task 2** — Create `Proveedor` Eloquent model and migration.
+  - Migration with columns: `cEmpresa`, `cRfc` (unique), `cTelefono`, `cCorreo`, `cDireccion`, `bActivo` (default true), timestamps.
+  - Model with `casts()` method (`bActivo` → boolean), `$fillable` listing all editable columns, `declare(strict_types=1)`.
+- [ ] **Task 3** — Define `App\Services\Proveedores\Contracts\ProveedorServiceInterface` and `App\Services\Proveedores\ProveedorService`.
+  - Methods: `list(?string $search): Collection`, `find(int $id): Proveedor`, `create(array $data): Proveedor`, `update(Proveedor $proveedor, array $data): Proveedor` (drops `cRfc` from payload), `toggleActivo(Proveedor $proveedor): Proveedor`, `delete(Proveedor $proveedor): void` (throws if has pedidos or medicamentos associated).
+  - Bind interface → implementation in `AppServiceProvider`.
+- [ ] **Task 4** — Form requests in `app/Http/Requests/Proveedores/`.
+  - `CreateProveedorRequest` — validates all fields, `cRfc` `unique:proveedors,cRfc`.
+  - `UpdateProveedorRequest` — validates all fields except `cRfc` (no rule, controller/service ignores it).
+- [ ] **Task 5** — Controller `app/Http/Controllers/Web/Proveedores/ProveedorController.php`.
+  - Constructor injects `ProveedorServiceInterface` (readonly promotion).
+  - Actions: `index`, `create`, `store`, `edit`, `update`, `toggle`, `destroy`. All return `View|RedirectResponse`.
+  - Resolves the role-namespaced view using `auth()->user()->role->value` to pick `admin` vs `inventory-manager` view path.
+- [ ] **Task 6** — Routes in `routes/web.php`, grouped under `middleware(['auth', 'role:inventory_manager,administrator'])`.
+  - `GET /proveedores` → `index`
+  - `GET /proveedores/create` → `create`
+  - `POST /proveedores` → `store`
+  - `GET /proveedores/{proveedor}/edit` → `edit`
+  - `PUT /proveedores/{proveedor}` → `update`
+  - `PATCH /proveedores/{proveedor}/toggle` → `toggle`
+  - `DELETE /proveedores/{proveedor}` → `destroy`
+- [ ] **Task 7** — Blade views for `inventory_manager`.
+  - `resources/views/inventory-manager/proveedores/index.blade.php` — listado con buscador (nombre / RFC), badge de estado, acciones editar / toggle / eliminar.
+  - `resources/views/inventory-manager/proveedores/create.blade.php` — formulario alta.
+  - `resources/views/inventory-manager/proveedores/edit.blade.php` — formulario edición; campo RFC `readonly` con nota explicativa.
+- [ ] **Task 8** — Blade views for `administrator` (mismo contenido / mismas rutas).
+  - `resources/views/admin/proveedores/index.blade.php`
+  - `resources/views/admin/proveedores/create.blade.php`
+  - `resources/views/admin/proveedores/edit.blade.php`
+- [ ] **Task 9** — Verificación.
+  - `./vendor/bin/pint`
+  - `composer test` (smoke).
+  - Probar como `inventory@pharma.test` y `admin@pharma.test`: alta, edición sin tocar RFC, toggle, intento de borrado con dependencias y sin dependencias.
