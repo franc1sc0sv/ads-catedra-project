@@ -19,6 +19,7 @@ Enum EstadoReceta {
   PENDIENTE
   VALIDADA
   RECHAZADA
+  ANULADA
 }
 
 Enum MetodoPago {
@@ -47,13 +48,6 @@ Enum TipoMovimiento {
   AJUSTE_MANUAL
   DEVOLUCION
   BAJA_VENCIMIENTO
-}
-
-Enum EstadoStripe {
-  PENDIENTE
-  EXITOSA
-  FALLIDA
-  REEMBOLSADA
 }
 
 Enum TipoDatoConfig {
@@ -150,12 +144,17 @@ Table Receta {
   cveFarmaceutico bigint
   fValidacion timestamp
   cObservaciones varchar
+  cveMedicamento bigint [not null, note: 'Medicamento controlado que esta receta autoriza; lo toma el sistema del ítem del carrito que disparó el bloqueo']
+  cveRevisorActual bigint [note: 'Farmacéutico que tiene el lock de revisión activo; NULL = receta disponible en cola']
+  fLockExpira timestamp [note: 'TTL del lock de revisión; NULL = sin lock activo; si ya pasó, el lock se considera vencido']
   fCreado timestamp [not null, default: `now()`]
 
   indexes {
     cNumeroReceta [unique]
     eEstado
     cveFarmaceutico
+    cveMedicamento
+    cveRevisorActual
   }
 }
 
@@ -169,7 +168,7 @@ Table RegistroVentas {
   eEstado EstadoVenta [not null, default: 'EN_PROCESO']
   cveCliente bigint [note: 'Nullable para venta rapida']
   cveVendedor bigint [not null]
-  cveReceta bigint [unique, note: 'Una receta valida una sola venta']
+  cMotivoCancelacion varchar [note: 'Obligatorio cuando eEstado = CANCELADA']
   fCreado timestamp [not null, default: `now()`]
   fActualizado timestamp [not null, default: `now()`]
 
@@ -178,7 +177,6 @@ Table RegistroVentas {
     cveCliente
     cveVendedor
     eEstado
-    cveReceta [unique]
     (fFechaVenta, eEstado)
   }
 }
@@ -199,6 +197,21 @@ Table DetalleVenta {
   }
 }
 
+Table VentaReceta {
+  cveVentaReceta bigint [primary key, increment]
+  cveVenta bigint [not null]
+  cveReceta bigint [not null]
+  cveMedicamento bigint [not null, note: 'Medicamento controlado autorizado por esta receta en esta venta']
+  fCreado timestamp [not null, default: `now()`]
+
+  indexes {
+    (cveVenta, cveMedicamento) [unique, note: 'Un controlado = una receta por venta']
+    cveVenta
+    cveReceta
+    cveMedicamento
+  }
+}
+
 Table PedidoProveedor {
   cvePedido bigint [primary key, increment]
   cveProveedor integer [not null]
@@ -207,8 +220,9 @@ Table PedidoProveedor {
   fFechaPedido timestamp [not null, default: `now()`]
   fFechaRecepcion timestamp
   eEstado EstadoPedido [not null, default: 'SOLICITADO']
-  nTotalEstimado numeric
+  nTotalEstimado numeric [not null, default: 0]
   cObservaciones varchar
+  cMotivoCancelacion varchar [note: 'Obligatorio cuando eEstado = CANCELADO']
   fCreado timestamp [not null, default: `now()`]
   fActualizado timestamp [not null, default: `now()`]
 
@@ -276,30 +290,6 @@ Table AuditoriaAcceso {
   }
 }
 
-Table RegistroStripe {
-  cveRegistroStripe bigint [primary key, increment]
-  cveVenta bigint [not null, unique, note: 'Una venta = un registro Stripe']
-  cChargeId varchar [unique, note: 'Stripe charge ID']
-  cPaymentIntentId varchar [unique, note: 'Stripe payment intent']
-  cIdempotencyKey varchar [not null, unique, note: 'Evita doble cobro por reintentos']
-  cRefundId varchar [unique, note: 'Stripe refund ID cuando se cancela la venta']
-  eEstadoStripe EstadoStripe [not null, default: 'PENDIENTE']
-  nMonto numeric [not null]
-  cMensajeError varchar
-  fProcesado timestamp [note: 'Cuando Stripe confirmo el cobro']
-  fReembolso timestamp [note: 'Cuando se aplico el refund']
-  fCreado timestamp [not null, default: `now()`]
-  fActualizado timestamp [not null, default: `now()`]
-
-  indexes {
-    cveVenta [unique]
-    cChargeId [unique]
-    cPaymentIntentId [unique]
-    cIdempotencyKey [unique]
-    eEstadoStripe
-  }
-}
-
 Table CatConfiguracion {
   cveConfiguracion bigint [primary key, increment]
   cClave varchar [not null, unique, note: 'Identificador, e.g. dias_alerta_vencimiento']
@@ -320,7 +310,6 @@ Ref fk_medicamento_proveedor: CatMedicamento.cveProveedor > CatProveedor.cveProv
 Ref fk_receta_farmaceutico: Receta.cveFarmaceutico > CatUsuario.cveUsuario
 Ref fk_venta_cliente: RegistroVentas.cveCliente > CatCliente.cveCliente
 Ref fk_venta_vendedor: RegistroVentas.cveVendedor > CatUsuario.cveUsuario
-Ref fk_venta_receta: RegistroVentas.cveReceta > Receta.cveReceta
 Ref fk_detalle_venta: DetalleVenta.cveVenta > RegistroVentas.cveVenta
 Ref fk_detalle_medicamento: DetalleVenta.cveMedicamento > CatMedicamento.cveMedicamento
 Ref fk_pedido_proveedor: PedidoProveedor.cveProveedor > CatProveedor.cveProveedor
@@ -333,4 +322,8 @@ Ref fk_mov_usuario: MovimientoInventario.cveUsuario > CatUsuario.cveUsuario
 Ref fk_mov_venta: MovimientoInventario.cveVenta > RegistroVentas.cveVenta
 Ref fk_mov_pedido: MovimientoInventario.cvePedido > PedidoProveedor.cvePedido
 Ref fk_auditoria_usuario: AuditoriaAcceso.cveUsuario > CatUsuario.cveUsuario
-Ref fk_stripe_venta: RegistroStripe.cveVenta > RegistroVentas.cveVenta
+Ref fk_receta_medicamento: Receta.cveMedicamento > CatMedicamento.cveMedicamento
+Ref fk_receta_revisor: Receta.cveRevisorActual > CatUsuario.cveUsuario
+Ref fk_ventareceta_venta: VentaReceta.cveVenta > RegistroVentas.cveVenta
+Ref fk_ventareceta_receta: VentaReceta.cveReceta > Receta.cveReceta
+Ref fk_ventareceta_medicamento: VentaReceta.cveMedicamento > CatMedicamento.cveMedicamento

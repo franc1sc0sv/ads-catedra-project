@@ -15,7 +15,7 @@ Cuatro flujos cubren el ciclo de vida de una receta, desde que la captura el caj
 
 ## What data does this section work with?
 
-Recetas con número único, datos del paciente y del médico, fechas de emisión y vencimiento, estado (pendiente, validada, rechazada), y la huella del farmacéutico que tomó la decisión. Cada receta está vinculada a la venta que la disparó.
+Recetas con número único, datos del paciente y del médico, fechas de emisión y vencimiento, estado (pendiente, validada, rechazada), y la huella del farmacéutico que tomó la decisión. Cada receta se vincula a la venta y al medicamento controlado específico que la disparó, a través de la tabla `VentaReceta`.
 
 ## What does this section depend on?
 

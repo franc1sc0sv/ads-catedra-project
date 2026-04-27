@@ -13,7 +13,7 @@ Cualquier usuario autenticado para su propia contraseña, y adicionalmente el ad
 ## How does it work?
 Cuando un usuario cambia la suya, ingresa la contraseña actual y la nueva escrita dos veces. El sistema valida primero que la actual sea correcta; si no lo es, rechaza el cambio con un mensaje claro y no toca nada. También exige que la nueva tenga la longitud mínima requerida y que las dos copias coincidan entre sí. Cuando es el administrador quien resetea la clave de otra persona, el flujo se simplifica: no se pide la contraseña actual, solo la nueva, y queda registrado en la bitácora general que fue un reset hecho por un admin.
 
-Tras un cambio exitoso, el sistema invalida todas las otras sesiones del usuario —las que están abiertas en otros navegadores o dispositivos— y conserva solo la sesión actual, para no expulsar a quien acaba de hacer el cambio. Esto se apoya en el manejo de sesiones nativo del framework; no existe una tabla custom de tokens detrás de esta función.
+Tras un cambio exitoso, el sistema invalida todas las otras sesiones del usuario —las que están abiertas en otros navegadores o dispositivos— y conserva solo la sesión actual, para no expulsar a quien acaba de hacer el cambio. Esto se apoya en `Auth::logoutOtherDevices()` del framework y requiere el middleware `password.confirm` en la ruta; no existe una tabla custom de tokens detrás de esta función.
 
 ## Skills relevantes
 

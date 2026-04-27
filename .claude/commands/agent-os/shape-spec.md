@@ -288,3 +288,23 @@ The following standards apply to this work.
 - **Visuals are optional** — Not every feature needs mockups.
 - **Standards guide, not dictate** — They inform the plan but aren't always mandatory.
 - **Specs are discoverable** — Months later, someone can find this spec and understand what was built and why.
+
+## Batch Mode
+
+This command can be driven programmatically by the `specs-from-plan-product` skill with all
+interactive questions pre-answered from an existing `plan-product/specs/` spec file.
+
+When an agent prompt begins with `BATCH MODE`:
+
+- Skip all `AskUserQuestion` calls — all inputs are already provided in the prompt
+- Write all 6 output files without waiting for approval
+- Still create or update `agent-os/specs/{domain}/_index.md` with the feature row
+- The `spec-integrity.sh` PostToolUse hook fires automatically per file written and validates
+  `_index.md` registration and sub-spec link integrity
+
+A valid batch-mode prompt must supply:
+- `Domain` and `Feature slug` (determines output path)
+- Full source spec content (from `plan-product/specs/`)
+- Full verbatim content of each standard to apply (not just names)
+- Codebase reference paths with relevance notes
+- Cross-cutting constraints that apply to all specs in this batch
