@@ -18,6 +18,10 @@
             <x-ui.alert variant="success">{{ session('status') }}</x-ui.alert>
         @endif
 
+        @if (session('error'))
+            <x-ui.alert variant="danger">{{ session('error') }}</x-ui.alert>
+        @endif
+
         <x-ui.card>
             <form method="GET" action="{{ route('admin.usuarios.index') }}"
                   class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -112,16 +116,28 @@
                                 <a href="{{ route('admin.usuarios.cambiarPassword', $usuario) }}">
                                     <x-ui.button type="button" variant="ghost" size="sm">Cambiar password</x-ui.button>
                                 </a>
-                                <form method="POST"
-                                      action="{{ route('admin.usuarios.toggleActiva', $usuario) }}">
-                                    @csrf
-                                    @method('PATCH')
-                                    @if ($usuario->is_active)
-                                        <x-ui.button type="submit" variant="danger" size="sm">Desactivar</x-ui.button>
-                                    @else
-                                        <x-ui.button type="submit" variant="secondary" size="sm">Activar</x-ui.button>
-                                    @endif
-                                </form>
+                                @if ($usuario->is_active && $usuario->role === \App\Enums\UserRole::ADMINISTRATOR)
+                                    <x-ui.button
+                                        type="button"
+                                        variant="danger"
+                                        size="sm"
+                                        disabled
+                                        title="No se puede desactivar a un administrador."
+                                        class="opacity-50 cursor-not-allowed">
+                                        Desactivar
+                                    </x-ui.button>
+                                @else
+                                    <form method="POST"
+                                          action="{{ route('admin.usuarios.toggleActiva', $usuario) }}">
+                                        @csrf
+                                        @method('PATCH')
+                                        @if ($usuario->is_active)
+                                            <x-ui.button type="submit" variant="danger" size="sm">Desactivar</x-ui.button>
+                                        @else
+                                            <x-ui.button type="submit" variant="secondary" size="sm">Activar</x-ui.button>
+                                        @endif
+                                    </form>
+                                @endif
                             </div>
                         </td>
                     </tr>
