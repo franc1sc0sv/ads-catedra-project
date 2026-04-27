@@ -1,23 +1,39 @@
 @extends('layouts.auth')
 
-@section('title', 'Sign In')
+@section('title', 'Iniciar sesión')
 
 @section('content')
-    <h2 class="text-2xl font-bold text-gray-900 mb-1">Welcome back</h2>
-    <p class="text-sm text-gray-500 mb-8">Sign in to your account to continue.</p>
+    <h2 class="text-2xl font-bold text-gray-900 mb-1">Bienvenido de vuelta</h2>
+    <p class="text-sm text-gray-500 mb-6">Inicia sesión para continuar.</p>
 
-    <form method="POST" action="{{ route('login') }}" class="flex flex-col gap-5">
+    @if ($errors->has('email'))
+        <div class="mb-5">
+            <x-ui.alert variant="danger">
+                {{ $errors->first('email') }}
+            </x-ui.alert>
+        </div>
+    @endif
+
+    <form method="POST" action="{{ route('login') }}" class="flex flex-col gap-5" novalidate>
         @csrf
 
-        <x-ui.input name="email" label="Email address" type="email" autocomplete="email" autofocus />
+        <x-ui.input
+            name="email"
+            label="Correo electrónico"
+            type="email"
+            autocomplete="email"
+            :required="true"
+            autofocus
+        />
 
-        <x-ui.input name="password" label="Password" type="password" autocomplete="current-password" />
+        <x-ui.input
+            name="password"
+            label="Contraseña"
+            type="password"
+            autocomplete="current-password"
+            :required="true"
+        />
 
-        <x-ui.button>Sign in</x-ui.button>
+        <x-ui.button type="submit" :block="true">Ingresar</x-ui.button>
     </form>
-
-    <p class="text-center text-sm text-gray-500 mt-6">
-        Don't have an account?
-        <a href="{{ route('register') }}" class="text-primary font-medium hover:underline">Register</a>
-    </p>
 @endsection

@@ -1,0 +1,74 @@
+@extends('layouts.app')
+
+@section('title', 'Alertas de Stock')
+
+@section('content')
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Alertas de Stock</h1>
+        <p class="text-gray-500 text-sm mt-1">Vista global. Las acciones requieren rol de inventario.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <x-ui.card>
+            <x-slot:header>
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-semibold text-gray-900">Bajo mínimo</h3>
+                    <x-ui.badge variant="red">{{ $bajoMinimo->count() }}</x-ui.badge>
+                </div>
+            </x-slot:header>
+
+            @if ($bajoMinimo->isEmpty())
+                <p class="text-sm text-gray-500">Sin medicamentos por debajo del mínimo.</p>
+            @else
+                <x-ui.table>
+                    <x-slot:header>
+                        <tr>
+                            <th class="px-3 py-2">Medicamento</th>
+                            <th class="px-3 py-2">Stock / mín.</th>
+                            <th class="px-3 py-2">Proveedor</th>
+                        </tr>
+                    </x-slot:header>
+                    @foreach ($bajoMinimo as $m)
+                        <tr>
+                            <td class="px-3 py-2">{{ $m->name }}</td>
+                            <td class="px-3 py-2">
+                                <span class="font-semibold text-red-600">{{ $m->stock }}</span> / {{ $m->min_stock }}
+                            </td>
+                            <td class="px-3 py-2 text-xs text-gray-500">{{ $m->supplier?->company_name }}</td>
+                        </tr>
+                    @endforeach
+                </x-ui.table>
+            @endif
+        </x-ui.card>
+
+        <x-ui.card>
+            <x-slot:header>
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-semibold text-gray-900">Próximos a vencer</h3>
+                    <x-ui.badge variant="yellow">{{ $proximosVencer->count() }}</x-ui.badge>
+                </div>
+            </x-slot:header>
+
+            @if ($proximosVencer->isEmpty())
+                <p class="text-sm text-gray-500">Sin medicamentos próximos a vencer.</p>
+            @else
+                <x-ui.table>
+                    <x-slot:header>
+                        <tr>
+                            <th class="px-3 py-2">Medicamento</th>
+                            <th class="px-3 py-2">Vence</th>
+                            <th class="px-3 py-2">Stock</th>
+                        </tr>
+                    </x-slot:header>
+                    @foreach ($proximosVencer as $m)
+                        <tr>
+                            <td class="px-3 py-2">{{ $m->name }}</td>
+                            <td class="px-3 py-2">{{ optional($m->expires_at)->format('d/m/Y') }}</td>
+                            <td class="px-3 py-2">{{ $m->stock }}</td>
+                        </tr>
+                    @endforeach
+                </x-ui.table>
+            @endif
+        </x-ui.card>
+    </div>
+@endsection

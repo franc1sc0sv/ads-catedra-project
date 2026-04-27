@@ -1,18 +1,18 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Http\Controllers\Web\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Http\Requests\Auth\RegisterRequest;
 use App\Services\Auth\Contracts\AuthServiceInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
-class AuthController extends Controller
+final class AuthController extends Controller
 {
     public function __construct(
         private readonly AuthServiceInterface $authService
@@ -25,40 +25,36 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): RedirectResponse
     {
-        if (! Auth::attempt($request->only('email', 'password'))) {
-            return back()->withErrors(['email' => 'Invalid credentials.'])->withInput();
+        $ok = $this->authService->attemptLogin(
+            (string) $request->validated('email'),
+            (string) $request->validated('password'),
+        );
+
+        if (! $ok) {
+            $email = (string) $request->validated('email');
+            $password = (string) $request->validated('password');
+
+            $message = $this->authService->isCredentialsValidButInactive($email, $password)
+                ? 'Cuenta suspendida. Contacte al administrador.'
+                : __('auth.failed');
+
+            return back()
+                ->withErrors(['email' => $message])
+                ->onlyInput('email');
         }
 
         $request->session()->regenerate();
 
-        return redirect($this->authService->redirectPathAfterLogin(Auth::user()));
-    }
+        Auth::user()->forceFill(['last_login_at' => now()])->save();
 
-    public function showRegister(): View
-    {
-        return view('auth.register');
-    }
-
-    public function register(RegisterRequest $request): RedirectResponse
-    {
-        $data = $request->validated();
-
-        // Default role for self-registration is pharmacist
-        $data['role'] ??= 'pharmacist';
-
-        Auth::login(\App\Models\User::create($data));
-
-        $request->session()->regenerate();
-
-        return redirect($this->authService->redirectPathAfterLogin(Auth::user()));
+        return redirect()->intended(
+            $this->authService->redirectPathAfterLogin(Auth::user())
+        );
     }
 
     public function logout(Request $request): RedirectResponse
     {
-        Auth::logout();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $this->authService->logout($request);
 
         return redirect()->route('login');
     }
