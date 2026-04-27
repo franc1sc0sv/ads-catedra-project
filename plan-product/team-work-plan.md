@@ -18,14 +18,16 @@ El sistema tiene **4 roles de usuario** (`administrator`, `salesperson`, `invent
 
 ## 2. Composición del equipo
 
-| Rol equipo | Workflow asignado | Features | Disponibilidad |
-|------------|-------------------|----------|----------------|
-| **TL** (yo) | Foundations + Auth + Administrador + Encargado de Inventario | 17 + scaffolding | Full |
-| **Focus A (FA)** | Vendedor / Cajero (POS) | 9 | Full |
-| **Focus B (FB)** | Farmacéutico | 3 | Full |
-| **Partial 1 (P1)** | Reportes operativos | 2 | Parcial |
-| **Partial 2 (P2)** | Auditoría y movimientos | 2 | Parcial |
-| | | **33** | |
+
+| Rol equipo         | Workflow asignado                                            | Features         | Disponibilidad |
+| ------------------ | ------------------------------------------------------------ | ---------------- | -------------- |
+| **TL** (yo)        | Foundations + Auth + Administrador + Encargado de Inventario | 17 + scaffolding | Full           |
+| **Focus A (FA)**   | Vendedor / Cajero (POS)                                      | 9                | Full           |
+| **Focus B (FB)**   | Farmacéutico                                                 | 3                | Full           |
+| **Partial 1 (P1)** | Reportes operativos                                          | 2                | Parcial        |
+| **Partial 2 (P2)** | Auditoría y movimientos                                      | 2                | Parcial        |
+|                    |                                                              | **33**           |                |
+
 
 ---
 
@@ -41,31 +43,34 @@ El sistema tiene **4 roles de usuario** (`administrator`, `salesperson`, `invent
 
 **Features (17):**
 
-| Bloque | Dominio | Spec | Tamaño |
-|--------|---------|------|--------|
-| Auth | auth | `login-web` | M |
-| Auth | auth | `logout` | S |
-| Auth | auth | `middleware-roles` | M |
-| Admin | configuracion | `gestion-configuracion` | M |
-| Admin | usuarios | `alta-usuario` | S |
-| Admin | usuarios | `listado-usuarios` | M |
-| Admin | usuarios | `edicion-rol` | M |
-| Admin | usuarios | `cambiar-password` | M |
-| Admin | usuarios | `activar-desactivar` | M |
-| Encargado | inventario | `catalogo-medicamentos` | M |
-| Encargado | inventario | `alertas-stock` | M |
-| Encargado | inventario | `ajuste-stock` | M |
-| Encargado | inventario | `historial-movimientos` | M |
-| Encargado | proveedores | `catalogo-proveedores` | S |
-| Encargado | proveedores | `crear-pedido` | M |
-| Encargado | proveedores | `listado-pedidos` | S |
-| Encargado | proveedores | `recibir-pedido` | M |
+
+| Bloque    | Dominio       | Spec                    | Tamaño |
+| --------- | ------------- | ----------------------- | ------ |
+| Auth      | auth          | `login-web`             | M      |
+| Auth      | auth          | `logout`                | S      |
+| Auth      | auth          | `middleware-roles`      | M      |
+| Admin     | configuracion | `gestion-configuracion` | M      |
+| Admin     | usuarios      | `alta-usuario`          | S      |
+| Admin     | usuarios      | `listado-usuarios`      | M      |
+| Admin     | usuarios      | `edicion-rol`           | M      |
+| Admin     | usuarios      | `cambiar-password`      | M      |
+| Admin     | usuarios      | `activar-desactivar`    | M      |
+| Encargado | inventario    | `catalogo-medicamentos` | M      |
+| Encargado | inventario    | `alertas-stock`         | M      |
+| Encargado | inventario    | `ajuste-stock`          | M      |
+| Encargado | inventario    | `historial-movimientos` | M      |
+| Encargado | proveedores   | `catalogo-proveedores`  | S      |
+| Encargado | proveedores   | `crear-pedido`          | M      |
+| Encargado | proveedores   | `listado-pedidos`       | S      |
+| Encargado | proveedores   | `recibir-pedido`        | M      |
+
 
 **Además entrega scaffolding cross-cutting:**
+
 - Migrations + seeders de las 11 tablas del DBML.
 - `app/Services/<dominio>/Contracts/` para todos los dominios (interfaces que los demás consumen).
 - `layouts/app.blade.php` + `layouts/auth.blade.php`.
-- `components/ui/*` reusables (button, card, input, table, alert, badge, modal).
+- `components/ui/`* reusables (button, card, input, table, alert, badge, modal).
 - `components/nav/<role>-nav.blade.php` (los 4).
 - `EnsureRole` middleware + matriz de permisos.
 - Patrón de transacción atómica (lo deja documentado y demostrado en `recibir-pedido` y `cobro-cierre` para que FA y FB lo repliquen).
@@ -86,17 +91,19 @@ El sistema tiene **4 roles de usuario** (`administrator`, `salesperson`, `invent
 
 **Features (9):**
 
-| Dominio | Spec | Tamaño |
-|---------|------|--------|
-| ventas | `nueva-venta` | M |
-| ventas | `cobro-cierre` | M |
-| ventas | `adjuntar-receta` | M |
-| ventas | `cancelar-venta` | M |
-| clientes | `catalogo-clientes` | M |
-| clientes | `busqueda-venta` | M |
-| clientes | `marcar-frecuente` | S |
-| clientes | `historial-compras` | M |
-| recetas | `registro-receta` | M |
+
+| Dominio  | Spec                | Tamaño |
+| -------- | ------------------- | ------ |
+| ventas   | `nueva-venta`       | M      |
+| ventas   | `cobro-cierre`      | M      |
+| ventas   | `adjuntar-receta`   | M      |
+| ventas   | `cancelar-venta`    | M      |
+| clientes | `catalogo-clientes` | M      |
+| clientes | `busqueda-venta`    | M      |
+| clientes | `marcar-frecuente`  | S      |
+| clientes | `historial-compras` | M      |
+| recetas  | `registro-receta`   | M      |
+
 
 **Hito técnico:** `cobro-cierre` — atomicidad estricta (estado venta + decremento stock + creación de movimientos + check de receta validada en controlados). **La transacción más crítica del sistema**. TL pair-programa la primera versión.
 
@@ -112,11 +119,13 @@ El sistema tiene **4 roles de usuario** (`administrator`, `salesperson`, `invent
 
 **Features (3):**
 
-| Dominio | Spec | Tamaño |
-|---------|------|--------|
-| recetas | `cola-pendientes` | M |
-| recetas | `validar-rechazar` | M |
-| recetas | `historial-recetas` | M |
+
+| Dominio | Spec                | Tamaño |
+| ------- | ------------------- | ------ |
+| recetas | `cola-pendientes`   | M      |
+| recetas | `validar-rechazar`  | M      |
+| recetas | `historial-recetas` | M      |
+
 
 **Hito técnico:** `validar-rechazar` — lock pesimista para que dos farmacéuticos no validen la misma receta a la vez. Decisión inmutable con auditoría. **El reto técnico más sutil del proyecto**.
 
@@ -134,10 +143,12 @@ El sistema tiene **4 roles de usuario** (`administrator`, `salesperson`, `invent
 
 **Features (2):**
 
-| Dominio | Spec | Tamaño |
-|---------|------|--------|
-| reportes | `reporte-ventas` | M |
-| reportes | `reporte-inventario` | M |
+
+| Dominio  | Spec                 | Tamaño |
+| -------- | -------------------- | ------ |
+| reportes | `reporte-ventas`     | M      |
+| reportes | `reporte-inventario` | M      |
+
 
 **Por qué partial:** ambas son **read-only** sobre tablas que ya existen. Sin riesgo de romper transacciones. Patrón de exportación CSV reusable. P1 puede trabajar al ~30% de tiempo.
 
@@ -151,10 +162,12 @@ El sistema tiene **4 roles de usuario** (`administrator`, `salesperson`, `invent
 
 **Features (2):**
 
-| Dominio | Spec | Tamaño |
-|---------|------|--------|
-| reportes | `reporte-movimientos` | S |
-| reportes | `bitacora-auditoria` | M |
+
+| Dominio  | Spec                  | Tamaño |
+| -------- | --------------------- | ------ |
+| reportes | `reporte-movimientos` | S      |
+| reportes | `bitacora-auditoria`  | M      |
+
 
 **Hito técnico:** `bitacora-auditoria` — implementa el listener que captura los eventos que el TL emite desde sus hooks. P2 se vuelve experto del sistema completo viendo *qué* genera cada acción.
 
@@ -193,14 +206,16 @@ Sem 10   TL: review final, polish
 
 ## 5. Sync points obligatorios
 
-| Cuándo | Quiénes | Tema |
-|--------|---------|------|
-| Final sem 3 | TL → todos | **Kickoff técnico**. Demo de auth + scaffolding + inventario base. Cada dev clona, corre `composer dev`, loguea con su rol. |
-| Inicio sem 4 | TL ↔ FA | Pair de 1h sobre `cobro-cierre`: estado de la venta, atomicidad, eventos. Replica del patrón de `recibir-pedido`. |
-| Inicio sem 5 | FA → FB | FA demuestra cómo se crea una `Receta` desde POS. FB ya puede mockear datos para `cola-pendientes`. |
-| Inicio sem 6 | TL ↔ FB | Walkthrough del lock pesimista para `validar-rechazar`. |
-| Inicio sem 8 | TL ↔ P2 | TL pasa el contrato de `AuditoriaService` y los eventos que ya emite. |
-| Cada viernes | Todos | Standup técnico 30min + demo de lo mergeado. |
+
+| Cuándo       | Quiénes    | Tema                                                                                                                        |
+| ------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Final sem 3  | TL → todos | **Kickoff técnico**. Demo de auth + scaffolding + inventario base. Cada dev clona, corre `composer dev`, loguea con su rol. |
+| Inicio sem 4 | TL ↔ FA    | Pair de 1h sobre `cobro-cierre`: estado de la venta, atomicidad, eventos. Replica del patrón de `recibir-pedido`.           |
+| Inicio sem 5 | FA → FB    | FA demuestra cómo se crea una `Receta` desde POS. FB ya puede mockear datos para `cola-pendientes`.                         |
+| Inicio sem 6 | TL ↔ FB    | Walkthrough del lock pesimista para `validar-rechazar`.                                                                     |
+| Inicio sem 8 | TL ↔ P2    | TL pasa el contrato de `AuditoriaService` y los eventos que ya emite.                                                       |
+| Cada viernes | Todos      | Standup técnico 30min + demo de lo mergeado.                                                                                |
+
 
 ---
 
@@ -219,15 +234,15 @@ Sem 10   TL: review final, polish
 
 1. Clonar repo, `docker compose up -d`, `composer install && npm install`, `php artisan migrate --seed`, `composer dev`.
 2. Loguear con la cuenta seed de su rol asignado:
-   - FA → `sales@pharma.test`
-   - FB → `pharmacist@pharma.test`
-   - P1 / P2 → `admin@pharma.test`
+  - FA → `sales@pharma.test`
+  - FB → `pharmacist@pharma.test`
+  - P1 / P2 → `admin@pharma.test`
 3. Leer en orden:
-   - `CLAUDE.md` (convenciones)
-   - `agent-os/standards/*` (estándares)
-   - `plan-product/database-schema.dbml` (modelo)
-   - `plan-product/product-roadmap.md` (visión)
-   - Los specs de **su workflow** en `agent-os/specs/<dominio>/<slug>/spec.md`
+  - `CLAUDE.md` (convenciones)
+  - `agent-os/standards/`* (estándares)
+  - `plan-product/database-schema.dbml` (modelo)
+  - `plan-product/product-roadmap.md` (visión)
+  - Los specs de **su workflow** en `agent-os/specs/<dominio>/<slug>/spec.md`
 4. Pair de 1h con TL para clarificar criterios de aceptación.
 5. Primer PR: el feature **S** o **M más simple** del workflow.
 
@@ -235,12 +250,14 @@ Sem 10   TL: review final, polish
 
 ## 8. Resumen ejecutivo
 
-| Persona | Workflow / Rol | Features | % |
-|---------|----------------|----------|---|
-| **TL (yo)** | Foundations + Auth + Administrador + Encargado de Inventario + scaffolding cross-cutting | 17 + scaffolding | ~52% |
-| **Focus A** | Vendedor / Cajero (ventas + clientes + receta capture) | 9 | ~27% |
-| **Focus B** | Farmacéutico (cola + validación + historial) | 3 | ~9% |
-| **Partial 1** | Reportes operativos (ventas + inventario) | 2 | ~6% |
-| **Partial 2** | Auditoría y movimientos (movimientos + bitácora) | 2 | ~6% |
+
+| Persona       | Workflow / Rol                                                                           | Features         | %    |
+| ------------- | ---------------------------------------------------------------------------------------- | ---------------- | ---- |
+| **TL (yo)**   | Foundations + Auth + Administrador + Encargado de Inventario + scaffolding cross-cutting | 17 + scaffolding | ~52% |
+| **Focus A**   | Vendedor / Cajero (ventas + clientes + receta capture)                                   | 9                | ~27% |
+| **Focus B**   | Farmacéutico (cola + validación + historial)                                             | 3                | ~9%  |
+| **Partial 1** | Reportes operativos (ventas + inventario)                                                | 2                | ~6%  |
+| **Partial 2** | Auditoría y movimientos (movimientos + bitácora)                                         | 2                | ~6%  |
+
 
 **Cada persona aprende y entrega un workflow cerrado.** Cero overlap de dominios. TL adelanta las bases; FA, FB, P1, P2 corren en paralelo a partir de la semana 4.

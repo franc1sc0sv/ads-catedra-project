@@ -1,28 +1,28 @@
 # Tareas — Edición de Cuenta y Rol
 
 - [x] Task 1: Save spec documentation (done)
-- [ ] Task 2: Extender `App\Services\Usuarios\Contracts\UsuarioServiceInterface` con `update(User $usuario, array $data): User`. Implementar en `App\Services\Usuarios\UsuarioService`:
+- [x] Task 2: Extender `App\Services\Usuarios\Contracts\UsuarioServiceInterface` con `update(User $usuario, array $data): User`. Implementar en `App\Services\Usuarios\UsuarioService`:
   - Hidratar campos `nombre`, `correo`, `role` y persistir.
   - Si `role` cambió, llamar a `BitacoraServiceInterface` (inyectado en el constructor `readonly`) registrando acción `ROL_CAMBIADO` con metadata `role_anterior` y `role_nuevo`.
   - Retornar el modelo actualizado.
-- [ ] Task 3: Crear `app/Http/Requests/Usuarios/UpdateUsuarioRequest.php`:
+- [x] Task 3: Crear `app/Http/Requests/Usuarios/UpdateUsuarioRequest.php`:
   - `authorize()` retorna `true` (la autorización se maneja por middleware `role:administrator`).
   - Reglas:
     - `nombre`: `required|string|max:255`
     - `correo`: `required|email|max:255|unique:users,email,{id}` usando `$this->route('usuario')->id`.
     - `role`: `required|string|Rule::enum(UserRole::class)`.
-- [ ] Task 4: Crear `app/Http/Controllers/Web/Usuarios/UsuarioController.php`:
+- [x] Task 4: Crear `app/Http/Controllers/Web/Usuarios/UsuarioController.php`:
   - Constructor `readonly` que inyecta `UsuarioServiceInterface`.
   - `edit(User $usuario): View` → retorna `view('admin.usuarios.edit', compact('usuario'))` con la lista de roles (`UserRole::cases()`).
   - `update(UpdateUsuarioRequest $request, User $usuario): RedirectResponse` → `$this->service->update($usuario, $request->validated())` y redirige a la lista con flash `success`.
-- [ ] Task 5: Registrar rutas en `routes/web.php` bajo `Route::middleware(['auth', 'role:administrator'])->prefix('admin/usuarios')->name('admin.usuarios.')->group(...)`:
+- [x] Task 5: Registrar rutas en `routes/web.php` bajo `Route::middleware(['auth', 'role:administrator'])->prefix('admin/usuarios')->name('admin.usuarios.')->group(...)`:
   - `GET /{usuario}/edit` → `UsuarioController@edit` (name `edit`).
   - `PUT /{usuario}` → `UsuarioController@update` (name `update`).
-- [ ] Task 6: Crear `resources/views/admin/usuarios/edit.blade.php`:
+- [x] Task 6: Crear `resources/views/admin/usuarios/edit.blade.php`:
   - Extiende `layouts/app.blade.php`.
   - Form `@method('PUT')` apuntando a `route('admin.usuarios.update', $usuario)`.
   - Inputs para `nombre` y `correo` con `old()` fallback al valor actual.
   - Mostrar el rol actual en texto (ej. "Rol actual: {{ $usuario->role->label() }}").
   - `<select name="role">` con `UserRole::cases()`, marcando como `selected` el rol actual.
   - Mostrar errores de validación con `@error`.
-- [ ] Task 7: Registrar binding `UsuarioServiceInterface => UsuarioService` en `App\Providers\AppServiceProvider::register()` (si no existe ya).
+- [x] Task 7: Registrar binding `UsuarioServiceInterface => UsuarioService` en `App\Providers\AppServiceProvider::register()` (si no existe ya).

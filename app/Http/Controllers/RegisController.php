@@ -2,38 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 use App\Models\Turista;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth ; 
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
-Use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
-use Illuminate\Support\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
-
-
-
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class RegisController extends BaseController
 {
-    
     public function Registro()
     {
         return view('Registro');
     }
 
-    public function validar_registro (Request $request)
+    public function validar_registro(Request $request)
     {
 
-        
+        // Validar datos
 
-       //Validar datos
-    
-
-   $request->validate([
+        $request->validate([
             'Nom_Cli' => ['required', 'regex:/^[\pL\sÑñ]+$/u'],
             'Correo_Cli' => ['required', 'email', Rule::unique('Turista', 'Correo_Cli')->ignore($request->id), 'regex:/^.*\.com$/'],
             'Contra_Cli' => ['required', 'min:8', 'regex:/[A-ZÑ]/', 'regex:/[a-zñ]/', 'regex:/[$!%*&#]/', 'confirmed'],
@@ -41,17 +30,17 @@ class RegisController extends BaseController
         ], [
             'Nom_Cli.required' => 'El nombre del cliente es obligatorio.',
             'Nom_Cli.regex' => 'El nombre del cliente solo puede contener letras y espacios.',
-            
+
             'Correo_Cli.required' => 'El correo del cliente es obligatorio.',
             'Correo_Cli.email' => 'El correo debe ser una dirección válida con el símbolo @.',
             'Correo_Cli.unique' => 'Este correo ya está en uso, por favor ingresa uno diferente.',
             'Correo_Cli.regex' => 'El correo debe terminar en ".com".',
-            
+
             'Contra_Cli.required' => 'La contraseña es obligatoria.',
             'Contra_Cli.min' => 'La contraseña debe tener al menos 8 caracteres.',
             'Contra_Cli.regex' => 'La contraseña debe contener al menos una letra mayúscula (incluyendo Ñ), una letra minúscula (incluyendo ñ) y un carácter especial como $!%*&#.',
             'Contra_Cli.confirmed' => 'La confirmación de la contraseña no coincide.',
-            
+
             'Fecha_Cliente.required' => 'La fecha de nacimiento es obligatoria.',
             'Fecha_Cliente.date' => 'La fecha de nacimiento debe ser una fecha válida.',
             'Fecha_Cliente.before' => 'La fecha de nacimiento debe ser anterior a la fecha actual.',
@@ -65,7 +54,7 @@ class RegisController extends BaseController
         }
 
         // Crear usuario
-        $user = new Turista();
+        $user = new Turista;
         $user->Nom_Cli = $request->input('Nom_Cli');
         $user->Correo_Cli = $request->input('Correo_Cli');
         $user->Contra_Cli = Hash::make($request->input('Contra_Cli'));
@@ -83,5 +72,4 @@ class RegisController extends BaseController
 
         return redirect()->route('Index_Turi');
     }
-
 }

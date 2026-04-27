@@ -1,32 +1,34 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::factory()->administrator()->create([
-            'name'  => 'Admin User',
-            'email' => 'admin@pharma.test',
-        ]);
+        $accounts = [
+            ['admin@pharma.test',     'Admin User',     'administrator',     'Admin User'],
+            ['sales@pharma.test',     'Sales User',     'salesperson',       'Sales User'],
+            ['inventory@pharma.test', 'Inventory User', 'inventory_manager', 'Inventory User'],
+            ['pharmacist@pharma.test', 'Pharmacist User', 'pharmacist',        'Pharmacist User'],
+        ];
 
-        User::factory()->salesperson()->create([
-            'name'  => 'Sales User',
-            'email' => 'sales@pharma.test',
-        ]);
-
-        User::factory()->inventoryManager()->create([
-            'name'  => 'Inventory User',
-            'email' => 'inventory@pharma.test',
-        ]);
-
-        User::factory()->pharmacist()->create([
-            'name'  => 'Pharmacist User',
-            'email' => 'pharmacist@pharma.test',
-        ]);
+        foreach ($accounts as [$email, $name, $role]) {
+            User::updateOrCreate(
+                ['email' => $email],
+                [
+                    'name' => $name,
+                    'password' => Hash::make('password'),
+                    'role' => $role,
+                    'is_active' => true,
+                ],
+            );
+        }
     }
 }
