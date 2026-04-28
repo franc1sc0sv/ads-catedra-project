@@ -3,42 +3,65 @@
 @section('title', 'Panel del Vendedor')
 
 @section('content')
-    <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900">Dashboard del rol Salesperson</h1>
-        <p class="text-gray-500 text-sm mt-1">Punto de venta y atención a clientes.</p>
-    </div>
-
+<div class="max-w-7xl mx-auto py-6 px-4">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <x-ui.card title="Nueva venta">
-            <p class="text-sm text-gray-600 mb-4">Iniciar una transacción de mostrador.</p>
-            <span class="text-xs text-gray-400 disabled">Próximamente (Fase B)</span>
+            <p class="text-gray-500 mb-4 text-sm">Iniciar una transacción de mostrador.</p>
+            <a href="{{ route('salesperson.ventas.create') }}" class="text-indigo-600 font-bold hover:underline">
+                Abrir Punto de Venta (POS) →
+            </a>
         </x-ui.card>
-        <x-ui.card title="Clientes">
-            <p class="text-sm text-gray-600 mb-4">Buscar y registrar clientes recurrentes.</p>
-            <span class="text-xs text-gray-400 disabled">Próximamente (Fase B)</span>
+
+        <x-ui.card title="Resumen del día">
+            <p class="text-3xl font-bold text-gray-900">${{ number_format($todayTotal, 2) }}</p>
+            <p class="text-xs text-gray-400 uppercase font-bold tracking-wider">Ventas netas de hoy</p>
         </x-ui.card>
     </div>
 
-    <x-ui.card title="Tu cuenta">
-        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div>
-                <dt class="text-gray-400">Nombre</dt>
-                <dd class="font-medium text-gray-900 mt-0.5">{{ auth()->user()->name }}</dd>
-            </div>
-            <div>
-                <dt class="text-gray-400">Correo</dt>
-                <dd class="font-medium text-gray-900 mt-0.5">{{ auth()->user()->email }}</dd>
-            </div>
-            <div>
-                <dt class="text-gray-400">Rol</dt>
-                <dd class="mt-0.5">
-                    <x-ui.badge variant="blue">{{ auth()->user()->role->label() }}</x-ui.badge>
-                </dd>
-            </div>
-            <div>
-                <dt class="text-gray-400">Miembro desde</dt>
-                <dd class="font-medium text-gray-900 mt-0.5">{{ auth()->user()->created_at->format('d/m/Y') }}</dd>
-            </div>
-        </dl>
+    <x-ui.card title="Historial de Ventas Recientes">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr class="text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        <th class="py-3 px-4">ID</th>
+                        <th class="py-3 px-4">Cliente</th>
+                        <th class="py-3 px-4">Total</th>
+                        <th class="py-3 px-4">Estado</th>
+                        <th class="py-3 px-4">Fecha</th>
+                        <th class="py-3 px-4 text-right">Acción</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($sales as $sale)
+                        <tr class="{{ $sale->status === \App\Enums\SaleStatus::CANCELLED ? 'opacity-50 bg-gray-50' : '' }}">
+                            <td class="py-4 px-4 text-sm">#{{ $sale->id }}</td>
+                            <td class="py-4 px-4 text-sm">{{ $sale->customer->name }}</td>
+                            <td class="py-4 px-4 text-sm font-bold">${{ number_format($sale->total, 2) }}</td>
+                            <td class="py-4 px-4">
+                                <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase 
+                                    {{ $sale->status === \App\Enums\SaleStatus::CANCELLED ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
+                                    {{ $sale->status->label() }}
+                                </span>
+                            </td>
+                            <td class="py-4 px-4 text-sm text-gray-500">
+                                {{ $sale->created_at->timezone('America/El_Salvador')->format('d/m/Y h:i A') }}
+                            </td>
+                            <td class="py-4 px-4 text-right">
+                                @if($sale->status !== \App\Enums\SaleStatus::CANCELLED)
+                                    <form action="{{ route('salesperson.ventas.cancel', $sale->id) }}" method="POST" onsubmit="return confirm('¿Anular venta #{{ $sale->id }}?')">
+                                        @csrf @method('PATCH')
+                                        <button type="submit" class="text-red-500 hover:text-red-700 text-[10px] font-bold uppercase">Anular</button>
+                                    </form>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="6" class="py-10 text-center text-gray-400 italic">No hay ventas registradas.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-4">{{ $sales->links() }}</div>
     </x-ui.card>
+</div>
 @endsection
