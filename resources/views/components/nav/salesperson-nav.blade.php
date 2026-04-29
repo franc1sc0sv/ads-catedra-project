@@ -2,7 +2,7 @@
     $links = [
         ['label' => 'Dashboard',   'route' => 'salesperson.dashboard'],
         ['label' => 'Nueva venta', 'route' => 'salesperson.ventas.create'],
-        ['label' => 'Historial',   'route' => 'salesperson.clientes.show'],
+        ['label' => 'Clientes',    'route' => 'salesperson.clientes.index'],
     ];
 @endphp
 
