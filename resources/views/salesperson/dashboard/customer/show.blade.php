@@ -77,35 +77,49 @@
         <div class="lg:col-span-2 space-y-6">
             <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="p-6 border-b border-gray-50 flex items-center justify-between">
-                    <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest italic">Últimas 10 Ventas</h3>
+                    <div>
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest italic">Historial de Compras</h3>
+                        <p class="text-[10px] font-bold text-gray-400 mt-1">Total: {{ $sales->total() }} ventas</p>
+                    </div>
                     @if($customer->is_frequent)
                         <span class="px-3 py-1 bg-amber-100 text-amber-600 text-[9px] font-black uppercase rounded-lg">Cliente Frecuente ★</span>
                     @endif
                 </div>
-                
+
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead class="bg-gray-50/50">
                             <tr>
                                 <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Folio</th>
                                 <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Fecha</th>
+                                <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Método</th>
                                 <th class="px-6 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Total</th>
                                 <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Estado</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
-                            @forelse($customer->sales as $sale)
-                                <tr class="hover:bg-gray-50/50 transition-colors">
+                            @forelse($sales as $sale)
+                                @php
+                                    $isCancelled = $sale->status?->value === 'cancelled';
+                                @endphp
+                                <tr class="{{ $isCancelled ? 'bg-red-50' : 'hover:bg-gray-50/50' }} transition-colors">
                                     <td class="px-6 py-4 text-xs font-bold text-indigo-600">#{{ $sale->invoice_number ?? $sale->id }}</td>
                                     <td class="px-6 py-4 text-xs text-gray-600 font-medium">{{ $sale->created_at->format('d/m/Y h:i A') }}</td>
-                                    <td class="px-6 py-4 text-right text-xs font-black text-gray-900">${{ number_format($sale->total, 2) }}</td>
+                                    <td class="px-6 py-4 text-xs text-gray-600 font-medium">{{ $sale->payment_method?->label() ?? '—' }}</td>
+                                    <td class="px-6 py-4 text-right text-xs font-black text-gray-900">${{ number_format((float) $sale->total, 2) }}</td>
                                     <td class="px-6 py-4 text-center">
-                                        <span class="px-2 py-1 bg-gray-100 text-gray-600 text-[9px] font-black uppercase rounded-md">Completada</span>
+                                        @if($isCancelled)
+                                            <span class="px-2 py-1 bg-red-100 text-red-600 text-[9px] font-black uppercase rounded-md">Cancelada</span>
+                                        @elseif($sale->status?->value === 'completed')
+                                            <span class="px-2 py-1 bg-green-100 text-green-600 text-[9px] font-black uppercase rounded-md">Completada</span>
+                                        @else
+                                            <span class="px-2 py-1 bg-gray-100 text-gray-600 text-[9px] font-black uppercase rounded-md">{{ $sale->status?->label() ?? '—' }}</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="px-6 py-12 text-center">
+                                    <td colspan="5" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center">
                                             <svg class="w-10 h-10 text-gray-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
@@ -118,6 +132,12 @@
                         </tbody>
                     </table>
                 </div>
+
+                @if($sales->hasPages())
+                    <div class="px-6 py-4 border-t border-gray-50 bg-gray-50/30">
+                        {{ $sales->links() }}
+                    </div>
+                @endif
             </div>
         </div>
     </div>
