@@ -2,16 +2,22 @@
 
 namespace App\Http\Controllers\Web\Dashboard;
 
-use App\Http\Controllers\Controller;
-use App\Models\Sale;
-use App\Models\Medication;
 use App\Enums\SaleStatus;
+use App\Http\Controllers\Controller;
+use App\Models\Customer;
+use App\Models\Medication;
+use App\Models\Sale;
+use App\Services\Bitacora\Contracts\BitacoraServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class SalesController extends Controller
 {
+    public function __construct(
+        private readonly BitacoraServiceInterface $bitacora,
+    ) {}
+
     public function index()
     {
         // 1. Cargamos las ventas paginadas
@@ -21,7 +27,7 @@ class SalesController extends Controller
         $medications = Medication::where('stock', '>', 0)->get();
 
         // 3. Cargamos los clientes
-        $customers = \App\Models\Customer::all();
+        $customers = Customer::all();
 
         // 4. NUEVO: Calculamos el total de ventas del día (excluyendo las anuladas)
         $todayTotal = Sale::whereDate('created_at', today())
@@ -34,30 +40,35 @@ class SalesController extends Controller
 
     public function store(Request $request)
     {
+        $allowAnonymous = (bool) setting('permite_venta_sin_cliente', true);
+
         $validated = $request->validate([
-            'sold_at'            => 'required|date|before_or_equal:now',
-            'subtotal'           => 'required|numeric|min:0',
-            'tax'                => 'required|numeric|min:0',
-            'total'              => 'required|numeric|min:0',
+            'sold_at' => 'required|date|before_or_equal:now',
+            'subtotal' => 'required|numeric|min:0',
             'payment_method' => 'required|in:cash', // Solo permite 'cash'
-            'status'             => 'required|string',
-            'customer_id'        => 'required|exists:customers,id',
-            'items'              => 'required|array|min:1',
+            'status' => 'required|string',
+            'customer_id' => [$allowAnonymous ? 'nullable' : 'required', 'exists:customers,id'],
+            'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:medications,id',
-            'items.*.quantity'   => 'required|integer|min:1',
+            'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_price' => 'required|numeric|min:0',
         ]);
 
-        return DB::transaction(function () use ($validated) {
+        $taxRate = (float) setting('tasa_iva', 0.13);
+        $subtotal = round((float) $validated['subtotal'], 2);
+        $tax = round($subtotal * $taxRate, 2);
+        $total = round($subtotal + $tax, 2);
+
+        return DB::transaction(function () use ($validated, $subtotal, $tax, $total) {
             // 1. Crear Cabecera de Venta
             $sale = Sale::create([
-                'sold_at'        => $validated['sold_at'],
-                'subtotal'       => $validated['subtotal'],
-                'tax'            => $validated['tax'],
-                'total'          => $validated['total'],
+                'sold_at' => $validated['sold_at'],
+                'subtotal' => $subtotal,
+                'tax' => $tax,
+                'total' => $total,
                 'payment_method' => $validated['payment_method'],
-                'status'         => $validated['status'],
-                'customer_id'    => $validated['customer_id'],
+                'status' => $validated['status'],
+                'customer_id' => $validated['customer_id'] ?? null,
                 'salesperson_id' => Auth::id(),
             ]);
 
@@ -66,7 +77,7 @@ class SalesController extends Controller
                 $medication = Medication::findOrFail($item['product_id']);
 
                 if ($medication->stock < $item['quantity']) {
-                    throw new \Exception("Stock insuficiente para: " . $medication->name);
+                    throw new \Exception('Stock insuficiente para: '.$medication->name);
                 }
 
                 // Descontar inventario
@@ -75,9 +86,9 @@ class SalesController extends Controller
                 // Crear detalle usando la relación items() de tu modelo Sale
                 $sale->items()->create([
                     'medication_id' => $item['product_id'],
-                    'quantity'      => $item['quantity'],
-                    'unit_price'    => $item['unit_price'],
-                    'line_total'    => $item['quantity'] * $item['unit_price'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'line_total' => $item['quantity'] * $item['unit_price'],
                 ]);
             }
 
@@ -88,7 +99,7 @@ class SalesController extends Controller
     public function create()
     {
         $medications = Medication::where('stock', '>', 0)->get();
-        $customers = \App\Models\Customer::all();
+        $customers = Customer::all();
 
         return view('salesperson.dashboard.create', compact('medications', 'customers'));
     }
@@ -101,9 +112,14 @@ class SalesController extends Controller
         }
 
         $sale->update([
-            'status' => SaleStatus::CANCELLED // Laravel se encarga de guardar 'cancelled' en la DB
+            'status' => SaleStatus::CANCELLED, // Laravel se encarga de guardar 'cancelled' en la DB
         ]);
 
-        return back()->with('success', 'Venta #' . $sale->id . ' anulada correctamente.');
+        $this->bitacora->log('VENTA_CANCELADA', Auth::id(), 'sales', (string) $sale->id, [
+            'sale_id' => $sale->id,
+            'reason' => $sale->cancellation_reason,
+        ]);
+
+        return back()->with('success', 'Venta #'.$sale->id.' anulada correctamente.');
     }
 }
