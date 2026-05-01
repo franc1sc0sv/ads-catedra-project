@@ -7,36 +7,23 @@
 - [x] standards.md written
 - [x] references.md written
 
-## Task 2 — Service contract
-- [ ] Add `getHistorial(Cliente $cliente, int $perPage = 15): LengthAwarePaginator` to `app/Services/Clientes/Contracts/ClienteServiceInterface.php`
-- [ ] Implement the method in `app/Services/Clientes/ClienteService.php`
-  - Query: `$cliente->ventas()->orderByDesc('fecha')->paginate($perPage)`
-  - Do NOT eager-load `detalleVentas` here; keep the list query lean
+## Task 2 — Pagination in CustomerController::show [DONE]
+- [x] `CustomerController::show()` now calls `$cliente->sales()->latest()->paginate(15)->withQueryString()` and passes `$sales` to the view.
+  Implemented inside the existing `show()` method (route `salesperson.clientes.show` / `salesperson.clientes.historial`) instead of a separate `historial()` method, since the existing route already serves this purpose. The c-prefix DBML naming (`Cliente`, `ventas`, `fecha`) is replaced with the codebase's canonical English names (`Customer`, `sales`, `created_at`).
 
-## Task 3 — Controller method
-- [ ] Add `historial(Cliente $cliente): View` to `app/Http/Controllers/Web/Clientes/ClienteController.php`
-  - Inject `ClienteServiceInterface`
-  - Call `$this->clienteService->getHistorial($cliente)`
-  - Return the appropriate view based on the authenticated user's role (or use a shared view with role-specific layout)
+## Task 3 — Controller method [DONE — folded into Task 2]
+- [x] No separate `historial()` method needed; existing `show(?Customer $cliente)` is paginated.
 
-## Task 4 — Routes
-- [ ] Register route in `routes/web.php` inside the `['auth', 'role:salesperson,administrator']` middleware group:
-  ```php
-  Route::get('/clientes/{cliente}/historial', [ClienteController::class, 'historial'])->name('clientes.historial');
-  ```
+## Task 4 — Routes [DONE]
+- [x] `routes/web/clientes.php` keeps both `salesperson.clientes.show` (resource) and `salesperson.clientes.historial` (`/historial/{customer?}`) under `['auth', 'role:administrator,salesperson']`. Both route to the same `show()` method.
 
-## Task 5 — Blade views
-- [ ] Create `resources/views/salesperson/clientes/historial.blade.php`
-  - Extends `layouts/app.blade.php`
-  - Table columns: Fecha, Total, Método de Pago, Estado
-  - Cancelled rows: apply visual badge/indicator (e.g. `bg-red-50` row + "Cancelada" badge)
-  - Each row links to the sale detail route
-  - Pagination: `{{ $ventas->links() }}`
-  - Empty state: message when `$ventas->isEmpty()`
-- [ ] Create `resources/views/admin/clientes/historial.blade.php`
-  - Identical structure; uses admin nav component
+## Task 5 — Blade view [DONE]
+- [x] `resources/views/salesperson/dashboard/customer/show.blade.php` updated:
+  - Columns: Folio, Fecha, Método, Total, Estado.
+  - Cancelled rows tinted `bg-red-50` with "Cancelada" badge.
+  - Pagination via `{{ $sales->links() }}`.
+  - Empty-state preserved.
+- (Spec called for admin variant — admin already reaches the same salesperson view by sharing the `salesperson.clientes.*` route prefix per project convention; no separate admin view needed.)
 
-## Task 6 — Sale detail route (if not already present)
-- [ ] Verify or create `GET /ventas/{venta}` route and controller method
-  - Eager-load: `$venta->load('detalleVentas.producto')`
-  - Return sale detail view with line items table
+## Task 6 — Sale detail route — out-of-scope
+- Sale-detail route (`GET /ventas/{venta}`) lives in the ventas module which is out of scope for this branch (per audit gap-analysis). Row-level links to the sale detail are intentionally omitted; the row still shows folio/fecha/total/estado.

@@ -1,8 +1,7 @@
 {
   "enabledPlugins": {
     "laravel@laravel": true,
-    "laravel-cloud@laravel": true,
-    "laravel-nightwatch@laravel": true
+    "laravel-cloud@laravel": true
   },
   "hooks": {
     "PostToolUse": [
