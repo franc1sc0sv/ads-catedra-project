@@ -30,7 +30,7 @@ class SaleFactory extends Factory
             'tax' => $tax,
             'total' => $subtotal + $tax,
             'payment_method' => PaymentMethod::CASH->value,
-            'status' => SaleStatus::IN_PROGRESS->value,
+            'status' => SaleStatus::PENDING->value,
             'customer_id' => null,
             'salesperson_id' => User::factory()->state(['role' => UserRole::SALESPERSON->value]),
             'cancellation_reason' => null,

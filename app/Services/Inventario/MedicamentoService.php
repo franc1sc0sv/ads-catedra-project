@@ -112,7 +112,7 @@ final class MedicamentoService implements MedicamentoServiceInterface
                 ->firstOrFail();
 
             $hasInProgressSale = Sale::query()
-                ->where('status', SaleStatus::IN_PROGRESS->value)
+                ->where('status', SaleStatus::PENDING->value)
                 ->whereHas('items', function ($q) use ($locked): void {
                     $q->where('medication_id', $locked->id);
                 })
