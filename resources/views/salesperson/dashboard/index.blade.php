@@ -3,7 +3,7 @@
 @section('title', 'Panel del Vendedor')
 
 @section('content')
-<div class="max-w-7xl mx-auto py-6 px-4">
+<div class="max-w-7xl mx-auto py-6 px-4" x-data="{ open: false, saleId: null, action: '' }">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <x-ui.card title="Nueva venta">
             <p class="text-gray-500 mb-4 text-sm">Iniciar una transacción de mostrador.</p>
@@ -35,10 +35,10 @@
                     @forelse($sales as $sale)
                         <tr class="{{ $sale->status === \App\Enums\SaleStatus::CANCELLED ? 'opacity-50 bg-gray-50' : '' }}">
                             <td class="py-4 px-4 text-sm">#{{ $sale->id }}</td>
-                            <td class="py-4 px-4 text-sm">{{ $sale->customer->name }}</td>
+                            <td class="py-4 px-4 text-sm">{{ $sale->customer?->name ?? 'Cliente anónimo' }}</td>
                             <td class="py-4 px-4 text-sm font-bold">${{ number_format($sale->total, 2) }}</td>
                             <td class="py-4 px-4">
-                                <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase 
+                                <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase
                                     {{ $sale->status === \App\Enums\SaleStatus::CANCELLED ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
                                     {{ $sale->status->label() }}
                                 </span>
@@ -48,10 +48,11 @@
                             </td>
                             <td class="py-4 px-4 text-right">
                                 @if($sale->status !== \App\Enums\SaleStatus::CANCELLED)
-                                    <form action="{{ route('salesperson.ventas.cancel', $sale->id) }}" method="POST" onsubmit="return confirm('¿Anular venta #{{ $sale->id }}?')">
-                                        @csrf @method('PATCH')
-                                        <button type="submit" class="text-red-500 hover:text-red-700 text-[10px] font-bold uppercase">Anular</button>
-                                    </form>
+                                    <button type="button"
+                                            @click="saleId = {{ $sale->id }}; action = '{{ route('salesperson.ventas.cancel', $sale->id) }}'; open = true"
+                                            class="text-red-500 hover:text-red-700 text-[10px] font-bold uppercase">
+                                        Anular
+                                    </button>
                                 @endif
                             </td>
                         </tr>
@@ -63,5 +64,47 @@
         </div>
         <div class="mt-4">{{ $sales->links() }}</div>
     </x-ui.card>
+
+    {{-- Cancel modal --}}
+    <div x-show="open"
+         x-cloak
+         x-transition.opacity
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+         @keydown.escape.window="open = false">
+        <div @click.outside="open = false" class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 mx-4">
+            <h2 class="text-lg font-bold text-gray-900 mb-1">Anular venta</h2>
+            <p class="text-sm text-gray-500 mb-4">
+                Indica el motivo de anulación de la venta <span x-text="'#' + saleId" class="font-bold text-gray-700"></span>.
+                El stock será devuelto y las recetas asociadas serán rechazadas.
+            </p>
+
+            <form :action="action" method="POST">
+                @csrf
+                @method('PATCH')
+
+                <label class="text-xs font-bold text-gray-400 uppercase block mb-1" for="cancellation_reason">Motivo</label>
+                <textarea id="cancellation_reason"
+                          name="cancellation_reason"
+                          required
+                          minlength="3"
+                          maxlength="255"
+                          rows="3"
+                          placeholder="Ej. Cliente desistió de la compra"
+                          class="w-full rounded-lg border-gray-300 text-sm focus:border-red-500 focus:ring-red-500"></textarea>
+
+                <div class="flex justify-end gap-2 mt-4">
+                    <button type="button"
+                            @click="open = false"
+                            class="px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-lg">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg">
+                        Confirmar anulación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 @endsection
