@@ -1,23 +1,23 @@
 # Tasks — Reporte de Movimientos
 
 - [x] Task 1: Save spec documentation (spec.md, shape.md, standards.md, references.md).
-- [ ] Task 2: Define `App\Services\Reportes\Contracts\ReporteMovimientosServiceInterface` with methods for paginated listing with filters and CSV export.
-- [ ] Task 3: Implement `App\Services\Reportes\ReporteMovimientosService`.
+- [x] Task 2: Define `App\Services\Reportes\Contracts\ReporteMovimientosServiceInterface` with methods for paginated listing with filters and CSV export.
+- [x] Task 3: Implement `App\Services\Reportes\ReporteMovimientosService`.
   - List paginated movements with combinable filters (tipo, medicamento, usuario, rango de fechas).
   - Default to today's movements when no date range provided.
   - Eager-load `medicamento`, `usuario`, `venta`, `pedido` to avoid N+1.
   - CSV export streams the same filtered query without pagination.
-- [ ] Task 4: Bind interface to implementation in `AppServiceProvider`.
-- [ ] Task 5: Create `App\Http\Controllers\Web\Reportes\ReporteMovimientosController` with:
+- [x] Task 4: Bind interface to implementation in `AppServiceProvider`.
+- [x] Task 5: Create `App\Http\Controllers\Web\Reportes\ReporteMovimientosController` with:
   - `index(Request)` → returns the paginated view.
   - `export(Request)` → returns CSV streamed response respecting filters.
   - Thin controller: validate input, call service, return `View|StreamedResponse`.
-- [ ] Task 6: Register routes in `routes/web.php` under `middleware(['auth', 'role:administrator'])`:
+- [x] Task 6: Register routes in `routes/web.php` under `middleware(['auth', 'role:administrator'])`:
   - `GET /admin/reportes/movimientos` → `index`.
   - `GET /admin/reportes/movimientos/export` → `export`.
-- [ ] Task 7: Build `resources/views/admin/reportes/movimientos.blade.php`:
+- [x] Task 7: Build `resources/views/admin/reportes/movimientos.blade.php`:
   - Filter form (tipo, medicamento, usuario, fecha desde/hasta) using shared UI components.
-  - Results table with origin links (venta or pedido) where applicable.
+  - Results table with origin links (venta or pedido) where applicable. // Pedido enlaza a `inventory-manager.pedidos.show` cuando existe la ruta; ventas se muestran como texto plano (no hay sale-detail route).
   - Pagination links preserving query string.
   - "Exportar CSV" button that submits the same filters to the export route.
-- [ ] Task 8: Add nav entry to `components/nav/admin-nav.blade.php` for the report.
+- [x] Task 8: Add nav entry to `components/nav/admin-nav.blade.php` for the report. // Admin nav ya referencia `admin.reportes.index` (hub) que enlaza a esta página; no se editó la nav.

@@ -6,6 +6,7 @@
         ['label' => 'Movimientos',  'route' => 'inventory-manager.movimientos.index'],
         ['label' => 'Proveedores',  'route' => 'inventory-manager.proveedores.index'],
         ['label' => 'Pedidos',      'route' => 'inventory-manager.pedidos.index'],
+        ['label' => 'Reportes',     'route' => 'reportes.inventario.index'],
     ];
 @endphp
 
@@ -13,7 +14,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
             <div class="flex items-center gap-3">
-                <span class="text-white font-bold text-lg">{{ config('app.name') }}</span>
+                <span class="text-white font-bold text-lg">{{ setting('nombre_farmacia', config('app.name')) }}</span>
                 <x-ui.badge variant="yellow">Inventario</x-ui.badge>
             </div>
 
