@@ -6,16 +6,25 @@ namespace App\Enums;
 
 enum SaleStatus: string
 {
-    case IN_PROGRESS = 'in_progress';
+    case PENDING = 'pending';
     case COMPLETED = 'completed';
     case CANCELLED = 'cancelled';
 
     public function label(): string
     {
         return match ($this) {
-            self::IN_PROGRESS => 'En proceso',
+            self::PENDING => 'Pendiente',
             self::COMPLETED => 'Completada',
-            self::CANCELLED => 'Cancelada',
+            self::CANCELLED => 'Anulada',
+        };
+    }
+
+    public function color(): string
+    {
+        return match ($this) {
+            self::PENDING => 'amber',
+            self::COMPLETED => 'emerald',
+            self::CANCELLED => 'rose',
         };
     }
 }
