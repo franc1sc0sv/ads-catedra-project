@@ -25,7 +25,7 @@ class UserSeeder extends Seeder
                 ['email' => $email],
                 [
                     'name' => $name,
-                    'password' => Hash::make('git '),
+                    'password' => Hash::make('password'),
                     'role' => $role,
                     'is_active' => true,
                 ],
