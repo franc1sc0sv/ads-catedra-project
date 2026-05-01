@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('tax', 12, 2)->default(0);
             $table->decimal('total', 12, 2);
             $table->string('payment_method');
-            $table->string('status')->default(SaleStatus::IN_PROGRESS->value);
+            $table->string('status')->default(SaleStatus::PENDING->value);
             $table->foreignId('customer_id')->nullable()->constrained('customers')->nullOnDelete();
             $table->foreignId('salesperson_id')->constrained('users')->restrictOnDelete();
             $table->string('cancellation_reason')->nullable();
