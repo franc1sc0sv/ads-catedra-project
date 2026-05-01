@@ -60,7 +60,7 @@ class SalesController extends Controller
                 $requiresPharmacist = false;
                 foreach ($validated['items'] as $item) {
                     $med = Medication::find($item['product_id']);
-                    if ($med && $med->category !== 'over_the_counter') {
+                    if ($med && $med->category->requiresPrescription()) {
                         $requiresPharmacist = true;
                         break;
                     }
@@ -93,7 +93,7 @@ class SalesController extends Controller
                         'line_total'    => $itemData['quantity'] * $itemData['unit_price'],
                     ]);
 
-                    if ($medication->category !== 'over_the_counter') {
+                    if ($medication->category->requiresPrescription()) {
                         $prescription = Prescription::create([
                             'prescription_number' => 'RX-' . strtoupper(bin2hex(random_bytes(4))),
                             'patient_name'        => $sale->customer->name,
