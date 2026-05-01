@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Web\Dashboard\AdminController;
 use App\Http\Controllers\Web\Dashboard\InventoryManagerController;
 use App\Http\Controllers\Web\Dashboard\PharmacistController;
-use App\Http\Controllers\Web\Dashboard\SalesController; 
+use App\Http\Controllers\Web\Dashboard\SalesController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
