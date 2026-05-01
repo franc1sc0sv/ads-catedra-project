@@ -124,7 +124,6 @@ class SalesController extends Controller
                 // Anular recetas vinculadas
                 foreach ($sale->prescriptions as $salePrescription) {
                     if ($salePrescription->prescription) {
-                        // REVISA AQUÍ: Si tu Enum no tiene CANCELLED, usa REJECTED o EXPIRED
                         $salePrescription->prescription->update([
                             'status' => PrescriptionStatus::REJECTED,
                             'notes'  => 'Venta anulada por el vendedor.'
