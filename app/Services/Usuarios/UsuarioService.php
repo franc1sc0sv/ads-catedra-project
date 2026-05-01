@@ -6,6 +6,7 @@ namespace App\Services\Usuarios;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Services\Bitacora\Contracts\BitacoraServiceInterface;
 use App\Services\Usuarios\Contracts\UsuarioServiceInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,10 @@ use Illuminate\Support\Facades\Hash;
 
 final class UsuarioService implements UsuarioServiceInterface
 {
+    public function __construct(
+        private readonly BitacoraServiceInterface $bitacora,
+    ) {}
+
     public function list(array $filters): LengthAwarePaginator
     {
         $query = User::query()->orderBy('name');
@@ -54,6 +59,12 @@ final class UsuarioService implements UsuarioServiceInterface
         $user->is_active = true;
         $user->save();
 
+        $this->bitacora->log('USUARIO_CREADO', Auth::id(), 'users', (string) $user->id, [
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role->value,
+        ]);
+
         return $user;
     }
 
@@ -68,11 +79,10 @@ final class UsuarioService implements UsuarioServiceInterface
         $user->save();
 
         if ($previousRole !== $newRole) {
-            // TODO(bitacora): cuando exista App\Services\Bitacora\Contracts\BitacoraServiceInterface,
-            // inyectar y llamar log('ROL_CAMBIADO', auth()->id(), 'users', (string) $user->id, [
-            //     'role_anterior' => $previousRole->value,
-            //     'role_nuevo'    => $newRole->value,
-            // ]).
+            $this->bitacora->log('ROL_CAMBIADO', Auth::id(), 'users', (string) $user->id, [
+                'role_anterior' => $previousRole->value,
+                'role_nuevo' => $newRole->value,
+            ]);
         }
 
         return $user;

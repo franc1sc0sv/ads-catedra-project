@@ -5,7 +5,7 @@ Review spec.md, shape.md, and standards.md. Confirm scope before writing any cod
 
 ---
 
-## Task 2 — ClienteServiceInterface
+## Task 2 — CustomerServiceInterface ✅
 
 Create `app/Services/Clientes/Contracts/ClienteServiceInterface.php`.
 
@@ -33,7 +33,7 @@ $this->app->bind(ClienteServiceInterface::class, ClienteService::class);
 
 ---
 
-## Task 3 — ClienteService
+## Task 3 — CustomerService ✅
 
 Create `app/Services/Clientes/ClienteService.php`.
 
@@ -42,7 +42,7 @@ Create `app/Services/Clientes/ClienteService.php`.
 
 ---
 
-## Task 4 — ClienteBusquedaController
+## Task 4 — CustomerSearchController ✅
 
 Create `app/Http/Controllers/Web/Clientes/ClienteBusquedaController.php`.
 
@@ -54,7 +54,7 @@ Inject `ClienteServiceInterface` via readonly constructor promotion. No business
 
 ---
 
-## Task 5 — QuickCreateClienteRequest
+## Task 5 — QuickCreateCustomerRequest ✅
 
 Create `app/Http/Requests/Clientes/QuickCreateClienteRequest.php`.
 
@@ -65,7 +65,7 @@ Rules:
 
 ---
 
-## Task 6 — Routes
+## Task 6 — Routes ✅
 
 In `routes/web.php`, add under `['auth', 'role:salesperson,administrator']` middleware:
 
@@ -78,7 +78,10 @@ Route::prefix('clientes')->name('clientes.')->group(function () {
 
 ---
 
-## Task 7 — Blade Autocomplete Component
+## Task 7 — Blade Autocomplete Component ✅
+
+> Implementation note: Spec used Spanish c-prefix names (`Cliente`, `nombre`, `identificacion`, `frecuente`, `activo`); the codebase's canonical English schema (`Customer`, `name`, `identification`, `is_frequent`, `is_active`) was used instead per the project's existing-code decisions. Embedding into `resources/views/salesperson/ventas/create.blade.php` is deferred — the ventas POS create-sale view doesn't exist yet (out-of-scope branch).
+
 
 Create `resources/views/components/clientes/busqueda.blade.php` (x-clientes.busqueda).
 

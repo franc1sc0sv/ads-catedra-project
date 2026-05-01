@@ -12,6 +12,7 @@ use App\Models\Prescription;
 use App\Models\SalePrescription;
 use App\Enums\SaleStatus;
 use App\Enums\PrescriptionStatus;
+use App\Services\Bitacora\Contracts\BitacoraServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,10 @@ use Illuminate\Support\Facades\Log;
 
 class SalesController extends Controller
 {
+    public function __construct(
+        private readonly BitacoraServiceInterface $bitacora,
+    ) {}
+
     public function index()
     {
         $sales = Sale::with(['customer', 'salesperson'])->latest()->paginate(10);
@@ -41,47 +46,59 @@ class SalesController extends Controller
 
     public function store(Request $request)
     {
-        Log::info('--- INICIO FORZADO ---');
-
-        // 1. Validación mínima
-        $data = $request->all();
+        $validated = $request->validate([
+            'total'              => 'required|numeric|min:0',
+            'customer_id'        => 'required|exists:customers,id',
+            'items'              => 'required|array|min:1',
+            'doctor_name'        => 'nullable|string',
+            'doctor_license'     => 'nullable|string',
+        ]);
 
         try {
-            return DB::transaction(function () use ($data) {
+            return DB::transaction(function () use ($validated, $request) {
+                // 1. Determinar si requiere receta
+                $requiresPharmacist = false;
+                foreach ($validated['items'] as $item) {
+                    $med = Medication::find($item['product_id']);
+                    if ($med && $med->category !== 'over_the_counter') {
+                        $requiresPharmacist = true;
+                        break;
+                    }
+                }
 
-                // 2. Crear Venta directamente
+                // 2. Crear Venta
                 $sale = Sale::create([
                     'sold_at'        => now(),
-                    'subtotal'       => $data['total'],
+                    'subtotal'       => $validated['total'],
                     'tax'            => 0,
-                    'total'          => $data['total'],
-                    'payment_method' => 'cash',
-                    'status'         => SaleStatus::PENDING, // Forzamos pending para probar
-                    'customer_id'    => $data['customer_id'],
+                    'total'          => $validated['total'],
+                    'payment_method' => $request->payment_method ?? 'cash',
+                    'status'         => $requiresPharmacist ? SaleStatus::PENDING : SaleStatus::COMPLETED,
+                    'customer_id'    => $validated['customer_id'],
                     'salesperson_id' => Auth::id(),
                 ]);
 
-                Log::info('Venta creada ID: ' . $sale->id);
+                // 3. Procesar Items
+                foreach ($validated['items'] as $itemData) {
+                    $medication = Medication::findOrFail($itemData['product_id']);
+                    
+                    if ($medication->stock < $itemData['quantity']) {
+                        throw new \Exception("Stock insuficiente para: " . $medication->name);
+                    }
 
-                foreach ($data['items'] as $item) {
-                    $medication = Medication::find($item['product_id']);
-
-                    // 3. Crear Item
                     $sale->items()->create([
                         'medication_id' => $medication->id,
-                        'quantity'      => $item['quantity'],
-                        'unit_price'    => $item['unit_price'],
-                        'line_total'    => $item['quantity'] * $item['unit_price'],
+                        'quantity'      => $itemData['quantity'],
+                        'unit_price'    => $itemData['unit_price'],
+                        'line_total'    => $itemData['quantity'] * $itemData['unit_price'],
                     ]);
-                    Log::info('Item creado para med: ' . $medication->id);
 
-                    // 4. Crear Receta si no es venta libre
                     if ($medication->category !== 'over_the_counter') {
                         $prescription = Prescription::create([
                             'prescription_number' => 'RX-' . strtoupper(bin2hex(random_bytes(4))),
                             'patient_name'        => $sale->customer->name,
-                            'doctor_name'         => $data['doctor_name'] ?? 'Dr. Test',
-                            'doctor_license'      => $data['doctor_license'] ?? '0000',
+                            'doctor_name'         => $validated['doctor_name'] ?? 'No indicado',
+                            'doctor_license'      => $validated['doctor_license'] ?? 'N/A',
                             'status'              => PrescriptionStatus::PENDING,
                             'issued_at'           => now(),
                             'expires_at'          => now()->addDays(30),
@@ -93,18 +110,16 @@ class SalesController extends Controller
                             'prescription_id' => $prescription->id,
                             'medication_id'   => $medication->id,
                         ]);
-                        Log::info('Receta y Pivote creados');
                     }
 
-                    $medication->decrement('stock', $item['quantity']);
+                    $medication->decrement('stock', $itemData['quantity']);
                 }
 
-                Log::info('--- FIN FORZADO EXITOSO ---');
-                return redirect()->route('salesperson.dashboard')->with('success', 'Venta guardada');
+                return redirect()->route('salesperson.dashboard')->with('success', 'Venta registrada con éxito');
             });
         } catch (\Exception $e) {
-            Log::error("FALLO CRITICO: " . $e->getMessage());
-            return back()->with('error', $e->getMessage());
+            Log::error("Error en store: " . $e->getMessage());
+            return back()->withInput()->with('error', $e->getMessage());
         }
     }
 
@@ -116,12 +131,10 @@ class SalesController extends Controller
 
         try {
             DB::transaction(function () use ($sale) {
-                // Devolver stock
                 foreach ($sale->items as $item) {
                     $item->medication->increment('stock', $item->quantity);
                 }
 
-                // Anular recetas vinculadas
                 foreach ($sale->prescriptions as $salePrescription) {
                     if ($salePrescription->prescription) {
                         $salePrescription->prescription->update([
@@ -131,16 +144,13 @@ class SalesController extends Controller
                     }
                 }
 
-                $sale->update([
-                    'status' => SaleStatus::CANCELLED,
-                    'cancellation_reason' => 'Anulada desde el panel de ventas.'
-                ]);
+                $sale->update(['status' => SaleStatus::CANCELLED]);
             });
 
-            return back()->with('success', 'Venta anulada correctamente.');
+            return back()->with('success', 'Venta #' . $sale->id . ' anulada correctamente.');
         } catch (\Exception $e) {
             Log::error("Error al cancelar: " . $e->getMessage());
-            return back()->with('error', 'Error al anular la venta.');
+            return back()->with('error', 'No se pudo anular la venta.');
         }
     }
 }
