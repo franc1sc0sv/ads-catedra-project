@@ -4,24 +4,20 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Web\Dashboard;
 
-use App\Http\Controllers\Controller;
-use App\Models\Sale;
-use App\Models\Medication;
-use App\Models\Customer;
-use App\Models\Prescription;
-use App\Models\SalePrescription;
 use App\Enums\SaleStatus;
-use App\Enums\PrescriptionStatus;
-use App\Services\Bitacora\Contracts\BitacoraServiceInterface;
+use App\Http\Controllers\Controller;
+use App\Models\Customer;
+use App\Models\Medication;
+use App\Models\Sale;
+use App\Services\Ventas\Contracts\VentaServiceInterface;
+use DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class SalesController extends Controller
 {
     public function __construct(
-        private readonly BitacoraServiceInterface $bitacora,
+        private readonly VentaServiceInterface $ventas,
     ) {}
 
     public function index()
@@ -31,7 +27,7 @@ class SalesController extends Controller
         $customers = Customer::all();
 
         $todayTotal = Sale::whereDate('created_at', today())
-            ->where('status', '!=', SaleStatus::CANCELLED)
+            ->where('status', '!=', SaleStatus::CANCELLED->value)
             ->sum('total');
 
         return view('salesperson.dashboard.index', compact('sales', 'medications', 'customers', 'todayTotal'));
@@ -41,116 +37,48 @@ class SalesController extends Controller
     {
         $medications = Medication::where('stock', '>', 0)->get();
         $customers = Customer::all();
+
         return view('salesperson.dashboard.create', compact('medications', 'customers'));
     }
 
     public function store(Request $request)
     {
+        $allowAnonymous = (bool) setting('permite_venta_sin_cliente', true);
+
         $validated = $request->validate([
-            'total'              => 'required|numeric|min:0',
-            'customer_id'        => 'required|exists:customers,id',
-            'items'              => 'required|array|min:1',
-            'doctor_name'        => 'nullable|string',
-            'doctor_license'     => 'nullable|string',
+            'sold_at' => 'required|date|before_or_equal:now',
+            'payment_method' => 'required|in:cash',
+            'customer_id' => [$allowAnonymous ? 'nullable' : 'required', 'exists:customers,id'],
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:medications,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'doctor_name' => 'nullable|string|max:255',
+            'doctor_license' => 'nullable|string|max:255',
         ]);
 
         try {
-            return DB::transaction(function () use ($validated, $request) {
-                // 1. Determinar si requiere receta
-                $requiresPharmacist = false;
-                foreach ($validated['items'] as $item) {
-                    $med = Medication::find($item['product_id']);
-                    if ($med && $med->category !== 'over_the_counter') {
-                        $requiresPharmacist = true;
-                        break;
-                    }
-                }
-
-                // 2. Crear Venta
-                $sale = Sale::create([
-                    'sold_at'        => now(),
-                    'subtotal'       => $validated['total'],
-                    'tax'            => 0,
-                    'total'          => $validated['total'],
-                    'payment_method' => $request->payment_method ?? 'cash',
-                    'status'         => $requiresPharmacist ? SaleStatus::PENDING : SaleStatus::COMPLETED,
-                    'customer_id'    => $validated['customer_id'],
-                    'salesperson_id' => Auth::id(),
-                ]);
-
-                // 3. Procesar Items
-                foreach ($validated['items'] as $itemData) {
-                    $medication = Medication::findOrFail($itemData['product_id']);
-                    
-                    if ($medication->stock < $itemData['quantity']) {
-                        throw new \Exception("Stock insuficiente para: " . $medication->name);
-                    }
-
-                    $sale->items()->create([
-                        'medication_id' => $medication->id,
-                        'quantity'      => $itemData['quantity'],
-                        'unit_price'    => $itemData['unit_price'],
-                        'line_total'    => $itemData['quantity'] * $itemData['unit_price'],
-                    ]);
-
-                    if ($medication->category !== 'over_the_counter') {
-                        $prescription = Prescription::create([
-                            'prescription_number' => 'RX-' . strtoupper(bin2hex(random_bytes(4))),
-                            'patient_name'        => $sale->customer->name,
-                            'doctor_name'         => $validated['doctor_name'] ?? 'No indicado',
-                            'doctor_license'      => $validated['doctor_license'] ?? 'N/A',
-                            'status'              => PrescriptionStatus::PENDING,
-                            'issued_at'           => now(),
-                            'expires_at'          => now()->addDays(30),
-                            'medication_id'       => $medication->id,
-                        ]);
-
-                        SalePrescription::create([
-                            'sale_id'         => $sale->id,
-                            'prescription_id' => $prescription->id,
-                            'medication_id'   => $medication->id,
-                        ]);
-                    }
-
-                    $medication->decrement('stock', $itemData['quantity']);
-                }
-
-                return redirect()->route('salesperson.dashboard')->with('success', 'Venta registrada con éxito');
-            });
-        } catch (\Exception $e) {
-            Log::error("Error en store: " . $e->getMessage());
+            $this->ventas->registerSale($validated, (int) Auth::id());
+        } catch (DomainException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
+
+        return redirect()
+            ->route('salesperson.dashboard')
+            ->with('success', 'Venta registrada con éxito.');
     }
 
-    public function cancel(Sale $sale)
+    public function cancel(Request $request, Sale $sale)
     {
-        if ($sale->status === SaleStatus::CANCELLED) {
-            return back()->with('error', 'Esta venta ya ha sido anulada.');
-        }
+        $data = $request->validate([
+            'cancellation_reason' => 'required|string|min:3|max:255',
+        ]);
 
         try {
-            DB::transaction(function () use ($sale) {
-                foreach ($sale->items as $item) {
-                    $item->medication->increment('stock', $item->quantity);
-                }
-
-                foreach ($sale->prescriptions as $salePrescription) {
-                    if ($salePrescription->prescription) {
-                        $salePrescription->prescription->update([
-                            'status' => PrescriptionStatus::REJECTED,
-                            'notes'  => 'Venta anulada por el vendedor.'
-                        ]);
-                    }
-                }
-
-                $sale->update(['status' => SaleStatus::CANCELLED]);
-            });
-
-            return back()->with('success', 'Venta #' . $sale->id . ' anulada correctamente.');
-        } catch (\Exception $e) {
-            Log::error("Error al cancelar: " . $e->getMessage());
-            return back()->with('error', 'No se pudo anular la venta.');
+            $this->ventas->cancelSale($sale, $data['cancellation_reason'], (int) Auth::id());
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
         }
+
+        return back()->with('success', 'Venta #'.$sale->id.' anulada correctamente.');
     }
 }

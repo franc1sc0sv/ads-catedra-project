@@ -32,6 +32,8 @@ use App\Services\Reportes\ReporteMovimientosService;
 use App\Services\Reportes\ReporteVentasService;
 use App\Services\Usuarios\Contracts\UsuarioServiceInterface;
 use App\Services\Usuarios\UsuarioService;
+use App\Services\Ventas\Contracts\VentaServiceInterface;
+use App\Services\Ventas\VentaService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -49,6 +51,8 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(ProveedorServiceInterface::class, ProveedorService::class);
         $this->app->bind(PedidoServiceInterface::class, PedidoService::class);
+
+        $this->app->bind(VentaServiceInterface::class, VentaService::class);
 
         $this->app->bind(CustomerServiceInterface::class, CustomerService::class);
 
