@@ -11,15 +11,12 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <x-ui.card title="Catálogo">
             <p class="text-sm text-gray-600 mb-4">Medicamentos y categorías.</p>
-            <span class="text-xs text-gray-400 disabled">Próximamente (Fase B)</span>
         </x-ui.card>
         <x-ui.card title="Alertas de stock">
             <p class="text-sm text-gray-600 mb-4">Productos por debajo del mínimo.</p>
-            <span class="text-xs text-gray-400 disabled">Próximamente (Fase B)</span>
         </x-ui.card>
         <x-ui.card title="Pedidos">
             <p class="text-sm text-gray-600 mb-4">Órdenes de compra a proveedores.</p>
-            <span class="text-xs text-gray-400 disabled">Próximamente (Fase B)</span>
         </x-ui.card>
     </div>
 

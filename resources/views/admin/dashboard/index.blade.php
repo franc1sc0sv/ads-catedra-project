@@ -11,15 +11,12 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <x-ui.card title="Usuarios">
             <p class="text-sm text-gray-600 mb-4">Alta, baja y roles del personal.</p>
-            <span class="text-xs text-gray-400 disabled">Próximamente (Fase B)</span>
         </x-ui.card>
         <x-ui.card title="Configuración">
             <p class="text-sm text-gray-600 mb-4">Parámetros del sistema y catálogos base.</p>
-            <span class="text-xs text-gray-400 disabled">Próximamente (Fase B)</span>
         </x-ui.card>
         <x-ui.card title="Reportes">
             <p class="text-sm text-gray-600 mb-4">Métricas operativas y de ventas.</p>
-            <span class="text-xs text-gray-400 disabled">Próximamente (Fase B)</span>
         </x-ui.card>
     </div>
 
