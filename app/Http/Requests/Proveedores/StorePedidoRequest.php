@@ -32,7 +32,7 @@ final class StorePedidoRequest extends FormRequest
                 Rule::exists('medications', 'id')->where(fn ($q) => $q->where('is_active', true)),
             ],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0.01'],
         ];
     }
 

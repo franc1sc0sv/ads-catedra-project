@@ -103,7 +103,9 @@
 
                     @foreach ($ventas as $venta)
                         <tr>
-                            <td class="px-4 py-3 font-medium">{{ $venta->id }}</td>
+                            <td class="px-4 py-3 font-medium">
+                                <a href="{{ route('ventas.show', $venta) }}" class="text-indigo-600 hover:underline">#{{ $venta->id }}</a>
+                            </td>
                             <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ $venta->sold_at?->format('d/m/Y H:i') }}</td>
                             <td class="px-4 py-3">{{ $venta->customer?->name ?? '—' }}</td>
                             <td class="px-4 py-3">{{ $venta->salesperson?->name ?? '—' }}</td>

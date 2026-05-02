@@ -29,7 +29,7 @@ final class AjusteStockRequest extends FormRequest
         return [
             'medication_id' => ['required', 'integer', Rule::exists('medications', 'id')],
             'type' => ['required', 'string', Rule::in($allowedTypes)],
-            'quantity' => ['required', 'integer', 'not_in:0'],
+            'quantity' => ['required', 'integer', 'not_in:0', 'min:-9999', 'max:9999'],
             'reason' => ['required', 'string', 'min:5', 'max:500'],
         ];
     }

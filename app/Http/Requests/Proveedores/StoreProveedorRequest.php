@@ -18,10 +18,17 @@ final class StoreProveedorRequest extends FormRequest
         return [
             'company_name' => ['required', 'string', 'max:255'],
             'tax_id' => ['required', 'string', 'max:64', 'unique:suppliers,tax_id'],
-            'phone' => ['nullable', 'string', 'max:64'],
+            'phone' => ['nullable', 'string', 'regex:/^(\+?503[\s-]?)?[267]\d{3}[\s-]?\d{4}$/'],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string', 'max:255'],
             'is_active' => ['nullable', 'boolean'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'phone.regex' => 'El teléfono debe iniciar con 2, 6 o 7 (####-####). Opcional: prefijo +503.',
         ];
     }
 

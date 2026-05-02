@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 // Phase B: Inventario domain — catálogo, alertas, ajustes, movimientos.
 
 // --- Lectura del catálogo: inventory_manager + salesperson + pharmacist ----
-Route::middleware(['auth', 'role:inventory_manager,salesperson,pharmacist,administrator'])
+Route::middleware(['auth', 'role:inventory_manager,salesperson,pharmacist'])
     ->prefix('inventario')
     ->name('inventory-manager.catalogo.')
     ->group(function (): void {

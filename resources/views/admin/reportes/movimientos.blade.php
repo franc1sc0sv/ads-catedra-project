@@ -97,19 +97,15 @@
                         <td class="px-4 py-3 text-right text-gray-600">{{ number_format((int) $mov->stock_after) }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $mov->user?->name ?? '—' }}</td>
                         <td class="px-4 py-3">
-                            @if ($mov->sale_id && \Illuminate\Support\Facades\Route::has('ventas.show'))
+                            @if ($mov->sale_id)
                                 <a href="{{ route('ventas.show', $mov->sale_id) }}" class="text-indigo-600 hover:underline">
                                     Venta #{{ $mov->sale_id }}
                                 </a>
-                            @elseif ($mov->sale_id)
-                                <span class="text-gray-600">Venta #{{ $mov->sale_id }}</span>
-                            @elseif ($mov->purchase_order_id && \Illuminate\Support\Facades\Route::has('inventory-manager.pedidos.show'))
+                            @elseif ($mov->purchase_order_id)
                                 <a href="{{ route('inventory-manager.pedidos.show', $mov->purchase_order_id) }}"
                                    class="text-primary hover:underline">
                                     Pedido #{{ $mov->purchase_order_id }}
                                 </a>
-                            @elseif ($mov->purchase_order_id)
-                                <span class="text-gray-600">Pedido #{{ $mov->purchase_order_id }}</span>
                             @else
                                 <span class="text-gray-400">—</span>
                             @endif

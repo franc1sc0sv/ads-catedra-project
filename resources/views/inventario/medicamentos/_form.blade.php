@@ -11,10 +11,10 @@
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-    <x-ui.input name="price" label="Precio" type="number" step="0.01" :value="$medicamento?->price" :required="true" />
-    <x-ui.input name="min_stock" label="Stock mínimo" type="number" :value="$medicamento?->min_stock ?? 0" :required="true" />
+    <x-ui.input name="price" label="Precio" type="number" step="0.01" min="0.01" max="999999.99" :value="$medicamento?->price" :required="true" />
+    <x-ui.input name="min_stock" label="Stock mínimo" type="number" min="0" :value="$medicamento?->min_stock ?? 0" :required="true" />
     @if ($mode === 'create')
-        <x-ui.input name="stock_inicial" label="Stock inicial" type="number" value="0" />
+        <x-ui.input name="stock_inicial" label="Stock inicial" type="number" min="0" value="0" />
     @endif
 </div>
 
@@ -23,6 +23,7 @@
         name="expires_at"
         label="Fecha de vencimiento"
         type="date"
+        min="{{ date('Y-m-d', strtotime('+1 day')) }}"
         :value="$medicamento?->expires_at?->format('Y-m-d')"
         :required="true"
     />

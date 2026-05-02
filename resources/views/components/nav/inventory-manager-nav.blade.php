@@ -5,8 +5,7 @@
         ['label' => 'Alertas',          'route' => 'inventory-manager.alertas.index'],
         ['label' => 'Proveedores',      'route' => 'inventory-manager.proveedores.index'],
         ['label' => 'Pedidos',          'route' => 'inventory-manager.pedidos.index'],
-        ['label' => 'Rep. Inventario',  'route' => 'reportes.inventario.index'],
-        ['label' => 'Rep. Movimientos', 'route' => 'admin.reportes.movimientos.index'],
+        ['label' => 'Reportes',         'route' => 'inventory-manager.reportes.index'],
     ];
 @endphp
 

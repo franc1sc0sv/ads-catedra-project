@@ -17,7 +17,7 @@ final class RecibirPedidoRequest extends FormRequest
     {
         return [
             'items' => ['required', 'array', 'min:1'],
-            'items.*.quantity_received' => ['required', 'integer', 'min:0'],
+            'items.*.quantity_received' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
         ];
     }

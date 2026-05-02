@@ -20,6 +20,13 @@ Route::middleware(['auth', 'role:administrator'])
     });
 
 Route::middleware(['auth', 'role:administrator,inventory_manager'])
+    ->prefix('inventory-manager/reportes')
+    ->name('inventory-manager.reportes.')
+    ->group(function () {
+        Route::get('/', [ReportesHubController::class, 'inventoryManager'])->name('index');
+    });
+
+Route::middleware(['auth', 'role:administrator,inventory_manager'])
     ->prefix('admin/reportes')
     ->name('admin.reportes.')
     ->group(function () {

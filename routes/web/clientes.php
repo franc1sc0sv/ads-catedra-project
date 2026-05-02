@@ -23,8 +23,6 @@ Route::middleware(['auth', 'role:administrator,salesperson'])->group(function ()
     Route::patch('/clientes/{cliente}/frecuente', [CustomerController::class, 'toggleFrecuente'])
         ->name('salesperson.clientes.frecuente');
 
-    Route::get('/ventas/{sale}', [CustomerController::class, 'showSale'])
-        ->name('salesperson.ventas.show');
 });
 
 Route::middleware(['auth', 'role:administrator'])->group(function () {

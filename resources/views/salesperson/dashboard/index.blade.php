@@ -49,7 +49,11 @@
                             <td class="py-4 px-4 text-sm text-gray-500">
                                 {{ $sale->created_at->timezone('America/El_Salvador')->format('d/m/Y h:i A') }}
                             </td>
-                            <td class="py-4 px-4 text-right">
+                            <td class="py-4 px-4 text-right flex items-center justify-end gap-3">
+                                <a href="{{ route('ventas.show', $sale->id) }}"
+                                   class="text-indigo-600 hover:text-indigo-800 text-[10px] font-bold uppercase">
+                                    Ver
+                                </a>
                                 @if($sale->status === \App\Enums\SaleStatus::PENDING)
                                     <button type="button"
                                             @click="saleId = {{ $sale->id }}; action = '{{ route('salesperson.ventas.cancel', $sale->id) }}'; open = true"

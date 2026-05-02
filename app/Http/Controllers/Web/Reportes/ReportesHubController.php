@@ -13,4 +13,9 @@ final class ReportesHubController extends Controller
     {
         return view('admin.reportes.index');
     }
+
+    public function inventoryManager(): View
+    {
+        return view('inventory-manager.reportes.index');
+    }
 }

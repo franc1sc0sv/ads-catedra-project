@@ -59,6 +59,7 @@
                                             <input
                                                 type="number"
                                                 step="1"
+                                                min="0"
                                                 name="value"
                                                 value="{{ old('value', $config->value) }}"
                                                 required
@@ -70,6 +71,7 @@
                                             <input
                                                 type="number"
                                                 step="0.01"
+                                                min="0"
                                                 name="value"
                                                 value="{{ old('value', $config->value) }}"
                                                 required

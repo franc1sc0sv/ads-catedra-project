@@ -16,6 +16,8 @@ Route::middleware(['auth', 'role:inventory_manager,administrator'])
 
         Route::get('pedidos', [PedidoController::class, 'index'])
             ->name('pedidos.index');
+        Route::get('pedidos/create', [PedidoController::class, 'create'])
+            ->name('pedidos.create');
         Route::get('pedidos/{pedido}', [PedidoController::class, 'show'])
             ->name('pedidos.show');
     });
@@ -40,9 +42,7 @@ Route::middleware(['auth', 'role:inventory_manager'])
         Route::delete('proveedores/{proveedor}', [ProveedorController::class, 'destroy'])
             ->name('proveedores.destroy');
 
-        // Pedidos a proveedores
-        Route::get('pedidos/create', [PedidoController::class, 'create'])
-            ->name('pedidos.create');
+        // Pedidos a proveedores — write operations only (GET create is in the read group above)
         Route::post('pedidos', [PedidoController::class, 'store'])
             ->name('pedidos.store');
         Route::patch('pedidos/{pedido}/send', [PedidoController::class, 'send'])
