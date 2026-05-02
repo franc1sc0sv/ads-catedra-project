@@ -57,18 +57,73 @@
                                 {{ $firstItem->issued_at->format('d/m/Y H:i') }}
                             </td>
 
-                            {{-- Formulario para validar la receta completa --}}
-                            <td class="px-4 py-4 text-right">
-                                <form action="{{ route('pharmacist.validate', $number) }}" method="POST" onsubmit="return confirm('¿Confirmas que deseas validar y despachar todos los medicamentos de la receta #{{ $number }}?')">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-bold rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-sm transition-all">
+                            {{-- Acciones: Validar / Rechazar --}}
+                            <td class="px-4 py-4 text-right" x-data="{ open: false }">
+                                <div class="flex items-center justify-end gap-2">
+                                    {{-- Validar --}}
+                                    <form id="pharmacist-validate-{{ $number }}" action="{{ route('pharmacist.validate', $number) }}" method="POST">
+                                        @csrf
+                                        @method('PATCH')
+                                        <x-ui.confirm
+                                            target-form="pharmacist-validate-{{ $number }}"
+                                            title="Validar receta"
+                                            message="¿Confirmas que deseas validar y despachar todos los medicamentos de la receta #{{ $number }}?"
+                                            confirm-label="Validar"
+                                            variant="primary"
+                                        >
+                                            <button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-bold rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-sm transition-all">
+                                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                Validar
+                                            </button>
+                                        </x-ui.confirm>
+                                    </form>
+
+                                    {{-- Rechazar --}}
+                                    <button type="button" @click="open = true"
+                                        class="inline-flex items-center px-3 py-2 border border-red-200 text-sm font-bold rounded-md text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 shadow-sm transition-all">
                                         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                         </svg>
-                                        Validar Receta
+                                        Rechazar
                                     </button>
-                                </form>
+
+                                    {{-- Modal de rechazo --}}
+                                    <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+                                        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4" @click.outside="open = false">
+                                            <h3 class="text-lg font-bold text-gray-900 mb-2">Rechazar receta #{{ $number }}</h3>
+                                            <p class="text-sm text-gray-500 mb-4">La venta quedará cancelada y no se descontará inventario.</p>
+                                            <form action="{{ route('pharmacist.reject', $number) }}" method="POST">
+                                                @csrf
+                                                @method('PATCH')
+                                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1" for="reason-{{ $number }}">
+                                                    Motivo del rechazo
+                                                </label>
+                                                <textarea
+                                                    id="reason-{{ $number }}"
+                                                    name="reason"
+                                                    rows="3"
+                                                    required
+                                                    minlength="3"
+                                                    maxlength="255"
+                                                    class="w-full rounded-lg border-gray-300 text-sm mb-4"
+                                                    placeholder="Ingrese el motivo del rechazo..."
+                                                ></textarea>
+                                                <div class="flex justify-end gap-3">
+                                                    <button type="button" @click="open = false"
+                                                        class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800">
+                                                        Cancelar
+                                                    </button>
+                                                    <button type="submit"
+                                                        class="px-4 py-2 text-sm font-bold rounded-lg text-white bg-red-600 hover:bg-red-700 transition-colors">
+                                                        Confirmar rechazo
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                     @empty

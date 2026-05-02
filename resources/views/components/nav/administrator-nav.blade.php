@@ -2,8 +2,8 @@
     $links = [
         ['label' => 'Dashboard',     'route' => 'admin.dashboard'],
         ['label' => 'Usuarios',      'route' => 'admin.usuarios.index'],
+        ['label' => 'Inventario',    'route' => 'inventory-manager.catalogo.index'],
         ['label' => 'Alertas stock', 'route' => 'inventory-manager.alertas.index'],
-        ['label' => 'Movimientos',   'route' => 'inventory-manager.movimientos.index'],
         ['label' => 'Configuración', 'route' => 'admin.configuracion.index'],
         ['label' => 'Reportes',      'route' => 'admin.reportes.index'],
     ];

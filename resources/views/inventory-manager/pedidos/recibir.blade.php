@@ -26,8 +26,7 @@
     </x-ui.alert>
 
     <x-ui.card class="mt-4">
-        <form method="POST" action="{{ route('inventory-manager.pedidos.recibir', $order) }}"
-              onsubmit="return confirm('¿Confirmas la recepción del pedido? Esta acción actualizará el stock.');">
+        <form id="recibir-pedido-form" method="POST" action="{{ route('inventory-manager.pedidos.recibir', $order) }}">
             @csrf
 
             <x-ui.table>
@@ -72,7 +71,15 @@
             </x-ui.table>
 
             <div class="flex items-center gap-3 pt-6">
-                <x-ui.button type="submit">Confirmar recepción</x-ui.button>
+                <x-ui.confirm
+                    target-form="recibir-pedido-form"
+                    title="Recibir pedido"
+                    message="¿Confirmas la recepción del pedido? Esta acción actualizará el stock y no se puede deshacer."
+                    confirm-label="Confirmar recepción"
+                    variant="primary"
+                >
+                    <x-ui.button type="button">Confirmar recepción</x-ui.button>
+                </x-ui.confirm>
                 <a href="{{ route('inventory-manager.pedidos.show', $order) }}">
                     <x-ui.button type="button" variant="ghost">Cancelar</x-ui.button>
                 </a>

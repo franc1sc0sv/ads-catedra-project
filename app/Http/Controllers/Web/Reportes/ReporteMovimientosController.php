@@ -8,6 +8,7 @@ use App\Enums\MovementType;
 use App\Http\Controllers\Controller;
 use App\Models\Medication;
 use App\Models\User;
+use App\Services\Inventario\Contracts\MovimientoServiceInterface;
 use App\Services\Reportes\Contracts\ReporteMovimientosServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -17,6 +18,7 @@ final class ReporteMovimientosController extends Controller
 {
     public function __construct(
         private readonly ReporteMovimientosServiceInterface $service,
+        private readonly MovimientoServiceInterface $movimientos,
     ) {}
 
     public function index(Request $request): View
@@ -31,6 +33,25 @@ final class ReporteMovimientosController extends Controller
             'tipos' => MovementType::cases(),
             'medicamentos' => Medication::query()->orderBy('name')->get(['id', 'name']),
             'usuarios' => User::query()->orderBy('name')->get(['id', 'name']),
+        ]);
+    }
+
+    public function show(Request $request, Medication $medicamento): View
+    {
+        $filters = $request->validate([
+            'desde' => ['nullable', 'date'],
+            'hasta' => ['nullable', 'date', 'after_or_equal:desde'],
+            'tipos' => ['nullable', 'array'],
+            'tipos.*' => ['string'],
+        ]);
+
+        $filters = array_merge(['desde' => null, 'hasta' => null, 'tipos' => []], $filters);
+
+        return view('admin.inventario.movimientos', [
+            'medicamento' => $medicamento,
+            'movimientos' => $this->movimientos->getByMedicamento($medicamento->id, $filters),
+            'filters' => $filters,
+            'tiposDisponibles' => MovementType::cases(),
         ]);
     }
 

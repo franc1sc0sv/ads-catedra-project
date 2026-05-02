@@ -78,13 +78,16 @@
                                             @break
 
                                         @case(\App\Enums\SettingType::BOOLEAN)
-                                            <select
-                                                name="value"
-                                                class="w-full md:w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                            >
-                                                <option value="1" @selected((bool) $config->typedValue() === true)>Sí</option>
-                                                <option value="0" @selected((bool) $config->typedValue() === false)>No</option>
-                                            </select>
+                                            <div class="md:w-32">
+                                                <x-ui.select
+                                                    name="value"
+                                                    :value="(bool) $config->typedValue() ? '1' : '0'"
+                                                    :options="[
+                                                        ['value' => '1', 'label' => 'Sí'],
+                                                        ['value' => '0', 'label' => 'No'],
+                                                    ]"
+                                                />
+                                            </div>
                                             @break
 
                                         @default

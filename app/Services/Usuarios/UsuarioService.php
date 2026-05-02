@@ -72,6 +72,8 @@ final class UsuarioService implements UsuarioServiceInterface
     {
         $previousRole = $user->role;
         $newRole = UserRole::from($data['role']);
+        $previousName = $user->name;
+        $previousEmail = $user->email;
 
         $user->name = $data['name'];
         $user->email = $data['email'];
@@ -82,6 +84,13 @@ final class UsuarioService implements UsuarioServiceInterface
             $this->bitacora->log('ROL_CAMBIADO', Auth::id(), 'users', (string) $user->id, [
                 'role_anterior' => $previousRole->value,
                 'role_nuevo' => $newRole->value,
+            ]);
+        }
+
+        if ($previousName !== $user->name || $previousEmail !== $user->email) {
+            $this->bitacora->log('USUARIO_EDITADO', Auth::id(), 'users', (string) $user->id, [
+                'name' => $user->name,
+                'email' => $user->email,
             ]);
         }
 
@@ -106,8 +115,10 @@ final class UsuarioService implements UsuarioServiceInterface
         $target->password = $newPassword;
         $target->save();
 
-        // TODO(bitacora): cuando exista BitacoraServiceInterface, registrar
-        // log('reset_password_admin', auth()->id(), 'users', (string) $target->id, []).
+        $this->bitacora->log('RESET_PASSWORD_ADMIN', Auth::id(), 'users', (string) $target->id, [
+            'reset_by' => Auth::id(),
+            'target_name' => $target->name,
+        ]);
     }
 
     public function toggleActiva(User $user): void
@@ -118,5 +129,10 @@ final class UsuarioService implements UsuarioServiceInterface
 
         $user->is_active = ! $user->is_active;
         $user->save();
+
+        $action = $user->is_active ? 'USUARIO_ACTIVADO' : 'USUARIO_DESACTIVADO';
+        $this->bitacora->log($action, Auth::id(), 'users', (string) $user->id, [
+            'name' => $user->name,
+        ]);
     }
 }

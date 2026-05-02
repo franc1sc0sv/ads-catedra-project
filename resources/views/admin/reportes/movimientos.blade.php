@@ -19,44 +19,31 @@
         <x-ui.card>
             <form method="GET" action="{{ route('admin.reportes.movimientos.index') }}"
                   class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                <div class="flex flex-col gap-1">
-                    <label for="type" class="text-sm font-medium text-gray-700">Tipo</label>
-                    <select id="type" name="type"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        <option value="">Todos</option>
-                        @foreach ($tipos as $t)
-                            <option value="{{ $t->value }}" @selected(($filters['type'] ?? '') === $t->value)>
-                                {{ $t->label() }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                <x-ui.select
+                    name="type"
+                    label="Tipo"
+                    placeholder="Todos"
+                    :value="$filters['type'] ?? ''"
+                    :options="collect($tipos)->map(fn($t) => ['value' => $t->value, 'label' => $t->label()])->all()"
+                />
 
-                <div class="flex flex-col gap-1">
-                    <label for="medication_id" class="text-sm font-medium text-gray-700">Medicamento</label>
-                    <select id="medication_id" name="medication_id"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        <option value="">Todos</option>
-                        @foreach ($medicamentos as $m)
-                            <option value="{{ $m->id }}" @selected((string) ($filters['medication_id'] ?? '') === (string) $m->id)>
-                                {{ $m->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                <x-ui.select
+                    name="medication_id"
+                    label="Medicamento"
+                    placeholder="Todos"
+                    searchable
+                    :value="$filters['medication_id'] ?? ''"
+                    :options="collect($medicamentos)->map(fn($m) => ['value' => $m->id, 'label' => $m->name])->all()"
+                />
 
-                <div class="flex flex-col gap-1">
-                    <label for="user_id" class="text-sm font-medium text-gray-700">Usuario</label>
-                    <select id="user_id" name="user_id"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        <option value="">Todos</option>
-                        @foreach ($usuarios as $u)
-                            <option value="{{ $u->id }}" @selected((string) ($filters['user_id'] ?? '') === (string) $u->id)>
-                                {{ $u->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                <x-ui.select
+                    name="user_id"
+                    label="Usuario"
+                    placeholder="Todos"
+                    searchable
+                    :value="$filters['user_id'] ?? ''"
+                    :options="collect($usuarios)->map(fn($u) => ['value' => $u->id, 'label' => $u->name])->all()"
+                />
 
                 <x-ui.input name="from" type="date" label="Desde" :value="$filters['from'] ?? ''" />
                 <x-ui.input name="to" type="date" label="Hasta" :value="$filters['to'] ?? ''" />
@@ -98,13 +85,23 @@
                         <td class="px-4 py-3">
                             <x-ui.badge variant="blue">{{ $mov->type?->label() }}</x-ui.badge>
                         </td>
-                        <td class="px-4 py-3 font-medium">{{ $mov->medication?->name ?? '—' }}</td>
+                        <td class="px-4 py-3 font-medium">
+                            @if ($mov->medication)
+                                <a href="{{ route('admin.reportes.movimientos.show', $mov->medication) }}" class="text-indigo-600 hover:underline">{{ $mov->medication->name }}</a>
+                            @else
+                                —
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-right">{{ number_format((int) $mov->quantity) }}</td>
                         <td class="px-4 py-3 text-right text-gray-600">{{ number_format((int) $mov->stock_before) }}</td>
                         <td class="px-4 py-3 text-right text-gray-600">{{ number_format((int) $mov->stock_after) }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $mov->user?->name ?? '—' }}</td>
                         <td class="px-4 py-3">
-                            @if ($mov->sale_id)
+                            @if ($mov->sale_id && \Illuminate\Support\Facades\Route::has('ventas.show'))
+                                <a href="{{ route('ventas.show', $mov->sale_id) }}" class="text-indigo-600 hover:underline">
+                                    Venta #{{ $mov->sale_id }}
+                                </a>
+                            @elseif ($mov->sale_id)
                                 <span class="text-gray-600">Venta #{{ $mov->sale_id }}</span>
                             @elseif ($mov->purchase_order_id && \Illuminate\Support\Facades\Route::has('inventory-manager.pedidos.show'))
                                 <a href="{{ route('inventory-manager.pedidos.show', $mov->purchase_order_id) }}"

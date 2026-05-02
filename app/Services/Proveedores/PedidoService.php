@@ -10,20 +10,31 @@ use App\Models\InventoryMovement;
 use App\Models\Medication;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
+use App\Services\Bitacora\Contracts\BitacoraServiceInterface;
 use App\Services\Proveedores\Contracts\PedidoServiceInterface;
 use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 final class PedidoService implements PedidoServiceInterface
 {
+    public function __construct(
+        private readonly BitacoraServiceInterface $bitacora,
+    ) {}
+
     public function create(array $data, int $requestedById): PurchaseOrder
     {
         $items = $data['items'] ?? [];
 
         if ($items === []) {
             throw new DomainException('El pedido debe tener al menos una línea.');
+        }
+
+        $medicationIds = array_column($items, 'medication_id');
+        if (count($medicationIds) !== count(array_unique($medicationIds))) {
+            throw new DomainException('No se puede agregar el mismo medicamento dos veces en un pedido.');
         }
 
         return DB::transaction(function () use ($data, $items, $requestedById): PurchaseOrder {
@@ -176,7 +187,14 @@ final class PedidoService implements PedidoServiceInterface
             $fresh->received_by_id = $receivedById;
             $fresh->save();
 
-            return $fresh->refresh()->load(['items.medication', 'supplier', 'requestedBy', 'receivedBy']);
+            $fresh->refresh()->load(['items.medication', 'supplier', 'requestedBy', 'receivedBy']);
+
+            $this->bitacora->log('PEDIDO_RECIBIDO', Auth::id(), 'purchase_orders', (string) $fresh->id, [
+                'supplier' => $fresh->supplier?->company_name,
+                'items_count' => count($items),
+            ]);
+
+            return $fresh;
         });
     }
 }

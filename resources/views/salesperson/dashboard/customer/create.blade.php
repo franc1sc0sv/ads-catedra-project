@@ -46,10 +46,11 @@
                 <h3 class="text-[10px] font-bold text-indigo-600 uppercase">Configuración</h3>
 
                 <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Teléfono (####-####)</label>
-                    <input type="text" name="phone" value="{{ old('phone') }}" 
-                           pattern="[267]{1}\d{3}-?\d{4}" maxlength="9"
-                           title="Inicie con 2, 6 o 7 y use guion (ej: 7777-7777)"
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Teléfono (####-#### · opcional +503)</label>
+                    <input type="text" name="phone" value="{{ old('phone') }}"
+                           pattern="(\+?503[\s-]?)?[267]\d{3}[\s-]?\d{4}" maxlength="15"
+                           title="Inicie con 2, 6 o 7 (ej: 7777-7777). Opcional prefijo +503 (ej: +503 7777-7777)"
+                           placeholder="+503 7777-7777"
                            class="w-full rounded-xl border-gray-200 focus:ring-indigo-500 @error('phone') border-red-500 @enderror">
                     @error('phone') <p class="text-red-500 text-[10px] mt-1 italic font-bold">{{ $message }}</p> @enderror
                 </div>

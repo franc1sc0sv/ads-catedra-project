@@ -13,6 +13,7 @@ use App\Services\Ventas\Contracts\VentaServiceInterface;
 use DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class SalesController extends Controller
 {
@@ -47,7 +48,6 @@ class SalesController extends Controller
 
         $validated = $request->validate([
             'sold_at' => 'required|date|before_or_equal:now',
-            'payment_method' => 'required|in:cash',
             'customer_id' => [$allowAnonymous ? 'nullable' : 'required', 'exists:customers,id'],
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:medications,id',
@@ -65,6 +65,13 @@ class SalesController extends Controller
         return redirect()
             ->route('salesperson.dashboard')
             ->with('success', 'Venta registrada con éxito.');
+    }
+
+    public function show(Sale $sale): View
+    {
+        return view('ventas.show', [
+            'sale' => $sale->load(['customer', 'salesperson', 'items.medication']),
+        ]);
     }
 
     public function cancel(Request $request, Sale $sale)

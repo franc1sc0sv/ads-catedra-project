@@ -95,6 +95,7 @@
                                 <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Método</th>
                                 <th class="px-6 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Total</th>
                                 <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Estado</th>
+                                <th class="px-6 py-4"></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
@@ -115,6 +116,9 @@
                                         @else
                                             <span class="px-2 py-1 bg-gray-100 text-gray-600 text-[9px] font-black uppercase rounded-md">{{ $sale->status?->label() ?? '—' }}</span>
                                         @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <a href="{{ route('salesperson.ventas.show', $sale) }}" class="text-indigo-500 hover:text-indigo-700 text-[10px] font-black uppercase">Ver</a>
                                     </td>
                                 </tr>
                             @empty

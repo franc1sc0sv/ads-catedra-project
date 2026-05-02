@@ -33,19 +33,14 @@
             @csrf
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="flex flex-col gap-1">
-                    <label for="supplier_id" class="text-sm font-medium text-gray-700">Proveedor</label>
-                    <select id="supplier_id" name="supplier_id" required
-                        class="w-full border rounded-lg px-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50">
-                        <option value="">Selecciona un proveedor</option>
-                        @foreach ($suppliers as $supplier)
-                            <option value="{{ $supplier->id }}" @selected(old('supplier_id') == $supplier->id)>
-                                {{ $supplier->company_name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('supplier_id')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
-                </div>
+                <x-ui.select
+                    name="supplier_id"
+                    label="Proveedor"
+                    placeholder="Selecciona un proveedor"
+                    searchable
+                    :required="true"
+                    :options="collect($suppliers)->map(fn($s) => ['value' => $s->id, 'label' => $s->company_name])->all()"
+                />
 
                 <x-ui.input name="expected_at" type="date" label="Fecha esperada de entrega (opcional)" :value="old('expected_at')" :error="$errors->first('expected_at')" />
             </div>
@@ -78,15 +73,20 @@
                         <template x-for="(line, idx) in lines" :key="idx">
                             <tr class="border-t border-gray-100">
                                 <td class="px-3 py-2">
-                                    <select :name="`items[${idx}][medication_id]`" required
-                                        x-model="line.medication_id"
-                                        x-on:change="onMedChange(idx)"
-                                        class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
-                                        <option value="">Selecciona</option>
-                                        <template x-for="med in medications" :key="med.id">
-                                            <option :value="med.id" x-text="med.name"></option>
-                                        </template>
-                                    </select>
+                                    <div class="relative">
+                                        <select :name="`items[${idx}][medication_id]`" required
+                                            x-model="line.medication_id"
+                                            x-on:change="onMedChange(idx)"
+                                            class="w-full appearance-none bg-white border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                            <option value="">Selecciona</option>
+                                            <template x-for="med in medications" :key="med.id">
+                                                <option :value="med.id" x-text="med.name"></option>
+                                            </template>
+                                        </select>
+                                        <svg class="w-4 h-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                        </svg>
+                                    </div>
                                 </td>
                                 <td class="px-3 py-2">
                                     <input type="number" min="1" step="1" required

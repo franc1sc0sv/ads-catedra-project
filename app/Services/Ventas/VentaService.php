@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Ventas;
 
+use App\Enums\MovementType;
 use App\Enums\PrescriptionStatus;
 use App\Enums\SaleStatus;
 use App\Models\Medication;
@@ -11,6 +12,7 @@ use App\Models\Prescription;
 use App\Models\Sale;
 use App\Models\SalePrescription;
 use App\Services\Bitacora\Contracts\BitacoraServiceInterface;
+use App\Services\Inventario\Contracts\MovimientoServiceInterface;
 use App\Services\Ventas\Contracts\VentaServiceInterface;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +21,7 @@ final class VentaService implements VentaServiceInterface
 {
     public function __construct(
         private readonly BitacoraServiceInterface $bitacora,
+        private readonly MovimientoServiceInterface $movimientos,
     ) {}
 
     public function registerSale(array $data, int $salespersonId): Sale
@@ -89,7 +92,7 @@ final class VentaService implements VentaServiceInterface
                 'subtotal' => $subtotal,
                 'tax' => $tax,
                 'total' => $total,
-                'payment_method' => $data['payment_method'] ?? 'cash',
+                'payment_method' => 'cash',
                 'status' => $requiresPharmacist ? SaleStatus::PENDING : SaleStatus::COMPLETED,
                 'customer_id' => $customerId,
                 'salesperson_id' => $salespersonId,
@@ -124,8 +127,21 @@ final class VentaService implements VentaServiceInterface
                         'medication_id' => $med->id,
                     ]);
                 }
+            }
 
-                $med->decrement('stock', $row['quantity']);
+            // Stock is only decremented for non-prescription sales.
+            // Prescription-gated sales defer the decrement to completeSale().
+            if (! $requiresPharmacist) {
+                foreach ($resolved as $row) {
+                    $row['medication']->decrement('stock', $row['quantity']);
+                }
+
+                $this->movimientos->recordSaleMovements(
+                    $sale->fresh(['items']),
+                    $salespersonId,
+                    MovementType::SALE_OUT,
+                    "Venta #{$sale->id}"
+                );
             }
 
             return $sale;
@@ -140,9 +156,64 @@ final class VentaService implements VentaServiceInterface
         return $sale->fresh(['items', 'prescriptions']);
     }
 
+    public function completeSale(Sale $sale, int $pharmacistId): Sale
+    {
+        $completed = DB::transaction(function () use ($sale, $pharmacistId): Sale {
+            /** @var Sale $fresh */
+            $fresh = Sale::query()
+                ->whereKey($sale->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($fresh->status !== SaleStatus::PENDING) {
+                return $fresh;
+            }
+
+            $hasPendingPrescriptions = $fresh->prescriptions()
+                ->whereHas('prescription', fn ($q) => $q->where('status', '!=', PrescriptionStatus::VALIDATED->value))
+                ->exists();
+
+            if ($hasPendingPrescriptions) {
+                throw new DomainException('Aún hay recetas pendientes de validación para esta venta.');
+            }
+
+            foreach ($fresh->items as $item) {
+                /** @var Medication $med */
+                $med = Medication::query()
+                    ->whereKey($item->medication_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($med->stock < $item->quantity) {
+                    throw new DomainException("Stock insuficiente para: {$med->name}. No se puede completar la venta.");
+                }
+
+                $med->decrement('stock', $item->quantity);
+            }
+
+            $this->movimientos->recordSaleMovements(
+                $fresh,
+                $pharmacistId,
+                MovementType::SALE_OUT,
+                "Venta #{$fresh->id} aprobada por farmacéutico"
+            );
+
+            $fresh->update(['status' => SaleStatus::COMPLETED]);
+
+            return $fresh;
+        });
+
+        $this->bitacora->log('VENTA_COMPLETADA', $pharmacistId, 'sales', (string) $completed->id, [
+            'sale_id' => $completed->id,
+            'pharmacist_id' => $pharmacistId,
+        ]);
+
+        return $completed->fresh();
+    }
+
     public function cancelSale(Sale $sale, string $reason, int $userId): Sale
     {
-        $cancelled = DB::transaction(function () use ($sale, $reason): Sale {
+        $cancelled = DB::transaction(function () use ($sale, $reason, $userId): Sale {
             /** @var Sale $fresh */
             $fresh = Sale::query()
                 ->whereKey($sale->id)
@@ -153,8 +224,14 @@ final class VentaService implements VentaServiceInterface
                 throw new DomainException('Esta venta ya fue anulada.');
             }
 
-            foreach ($fresh->items as $item) {
-                $item->medication->increment('stock', $item->quantity);
+            $wasCompleted = $fresh->status === SaleStatus::COMPLETED;
+
+            // Only restore stock if the sale had already decremented it (COMPLETED state).
+            // PENDING sales never had their stock decremented.
+            if ($wasCompleted) {
+                foreach ($fresh->items as $item) {
+                    $item->medication->increment('stock', $item->quantity);
+                }
             }
 
             foreach ($fresh->prescriptions as $salePrescription) {
@@ -171,6 +248,15 @@ final class VentaService implements VentaServiceInterface
                 'cancellation_reason' => $reason,
             ]);
 
+            if ($wasCompleted) {
+                $this->movimientos->recordSaleMovements(
+                    $fresh,
+                    $userId,
+                    MovementType::CUSTOMER_RETURN,
+                    "Anulación: {$reason}"
+                );
+            }
+
             return $fresh;
         });
 
@@ -179,6 +265,11 @@ final class VentaService implements VentaServiceInterface
         ]);
 
         return $cancelled->fresh();
+    }
+
+    public function rejectSaleByPharmacist(Sale $sale, string $reason, int $pharmacistId): Sale
+    {
+        return $this->cancelSale($sale, "Rechazado por farmacéutico: {$reason}", $pharmacistId);
     }
 
     /**

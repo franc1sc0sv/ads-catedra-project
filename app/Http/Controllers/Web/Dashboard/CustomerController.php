@@ -6,43 +6,36 @@ namespace App\Http\Controllers\Web\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\Sale;
+use App\Services\Clientes\Contracts\CustomerServiceInterface;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class CustomerController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
+    public function __construct(
+        private readonly CustomerServiceInterface $customerService,
+    ) {}
+
+    public function index(Request $request): View
     {
-        $search = $request->get('search');
+        $filters = $request->only(['search', 'incluir_inactivos']);
+        $customers = $this->customerService->list($filters);
 
-        $customers = Customer::when($search, function ($query) use ($search) {
-            $query->where('name', 'like', "%{$search}%")
-                ->orWhere('identification', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%")
-                ->orWhere('phone', 'like', "%{$search}%");
-        })
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
-
-        return view('salesperson.dashboard.customer.index', compact('customers'));
+        return view('salesperson.dashboard.customer.index', [
+            'customers' => $customers,
+            'filters' => $filters,
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function create(): View
     {
         return view('salesperson.dashboard.customer.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|min:3|max:255',
@@ -52,34 +45,25 @@ class CustomerController extends Controller
                 'regex:/^\d{8}-\d{1}$/',
                 'unique:customers,identification',
             ],
-            'phone' => ['nullable', 'string', 'regex:/^[267]\d{3}-?\d{4}$/'],
+            'phone' => ['nullable', 'string', 'regex:/^(\+?503[\s-]?)?[267]\d{3}[\s-]?\d{4}$/'],
             'email' => 'nullable|email|max:255|unique:customers,email',
             'address' => 'nullable|string|max:500',
         ], [
             'identification.regex' => 'El formato del DUI debe ser ########-#',
-            'phone.regex' => 'El teléfono debe iniciar con 2, 6 o 7 (####-####).',
+            'phone.regex' => 'El teléfono debe iniciar con 2, 6 o 7 (####-####). Opcional: prefijo +503.',
         ]);
 
-        try {
-            $validated['is_frequent'] = $request->has('is_frequent');
-            $validated['is_active'] = $request->has('is_active');
+        $validated['is_frequent'] = $request->has('is_frequent');
+        $validated['is_active'] = true;
 
-            Customer::create($validated);
+        Customer::create($validated);
 
-            return redirect()
-                ->route('salesperson.clientes.index')
-                ->with('success', 'Cliente registrado exitosamente.');
-        } catch (\Exception $e) {
-            Log::error('Error al crear cliente: '.$e->getMessage());
-
-            return back()->withInput()->with('error', 'Ocurrió un error al procesar el registro.');
-        }
+        return redirect()
+            ->route('salesperson.clientes.index')
+            ->with('success', 'Cliente registrado exitosamente.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(?Customer $cliente = null)
+    public function show(?Customer $cliente = null): RedirectResponse|View
     {
         if ($cliente === null) {
             return redirect()->route('salesperson.clientes.index');
@@ -96,18 +80,12 @@ class CustomerController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Customer $cliente)
+    public function edit(Customer $cliente): View
     {
         return view('salesperson.dashboard.customer.edit', ['customer' => $cliente]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Customer $cliente)
+    public function update(Request $request, Customer $cliente): RedirectResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|min:3|max:255',
@@ -117,49 +95,67 @@ class CustomerController extends Controller
                 'regex:/^\d{8}-\d{1}$/',
                 'unique:customers,identification,'.$cliente->id,
             ],
-            'phone' => ['nullable', 'string', 'regex:/^[267]\d{3}-?\d{4}$/'],
+            'phone' => ['nullable', 'string', 'regex:/^(\+?503[\s-]?)?[267]\d{3}[\s-]?\d{4}$/'],
             'email' => 'nullable|email|max:255|unique:customers,email,'.$cliente->id,
             'address' => 'nullable|string|max:500',
         ], [
             'identification.regex' => 'El formato del DUI debe ser ########-#',
-            'phone.regex' => 'Formato de teléfono no válido.',
+            'phone.regex' => 'Formato de teléfono no válido. Use ####-#### (opcional prefijo +503).',
         ]);
 
-        try {
-            $validated['is_frequent'] = $request->has('is_frequent');
-            $validated['is_active'] = $request->has('is_active');
-
-            $cliente->update($validated);
-
-            return redirect()
-                ->route('salesperson.clientes.index')
-                ->with('success', 'Información del cliente actualizada.');
-        } catch (\Exception $e) {
-            Log::error("Error al actualizar cliente ID {$cliente->id}: ".$e->getMessage());
-
-            return back()->withInput()->with('error', 'No se pudieron guardar los cambios.');
+        // Lock DUI if the customer has sales history.
+        if ($validated['identification'] !== $cliente->identification && $cliente->sales()->exists()) {
+            return back()->withInput()
+                ->with('error', 'No se puede modificar la identificación de un cliente con ventas registradas.');
         }
+
+        $validated['is_frequent'] = $request->has('is_frequent');
+        $validated['is_active'] = $request->has('is_active');
+
+        $cliente->update($validated);
+
+        return redirect()
+            ->route('salesperson.clientes.index')
+            ->with('success', 'Información del cliente actualizada.');
     }
 
-    /**
-     * Remove the specified resource from storage. Route-gated to administrator.
-     */
-    public function destroy(Customer $cliente)
+    public function destroy(Customer $cliente): RedirectResponse
     {
-        try {
-            if ($cliente->sales()->count() > 0) {
-                return back()->with('error', 'No se puede eliminar un cliente con historial de ventas.');
-            }
-
-            $cliente->delete();
+        if ($cliente->sales()->exists()) {
+            $this->customerService->softDelete($cliente);
 
             return redirect()
                 ->route('salesperson.clientes.index')
-                ->with('success', 'El registro ha sido eliminado permanentemente.');
-        } catch (\Exception $e) {
-            Log::error('Error al eliminar cliente: '.$e->getMessage());
-
-            return back()->with('error', 'Error técnico al intentar eliminar el registro.');
+                ->with('success', 'Cliente desactivado (tiene historial de ventas y no puede eliminarse).');
         }
+
+        $cliente->delete();
+
+        return redirect()
+            ->route('salesperson.clientes.index')
+            ->with('success', 'Cliente eliminado permanentemente.');
+    }
+
+    public function reactivate(Customer $cliente): RedirectResponse
+    {
+        $this->customerService->reactivate($cliente);
+
+        return redirect()
+            ->route('salesperson.clientes.index', ['incluir_inactivos' => '1'])
+            ->with('success', "Cliente {$cliente->name} reactivado.");
+    }
+
+    public function toggleFrecuente(Customer $cliente): JsonResponse
+    {
+        $updated = $this->customerService->toggleFrecuente($cliente);
+
+        return response()->json(['is_frequent' => $updated->is_frequent]);
+    }
+
+    public function showSale(Sale $sale): View
+    {
+        $sale->load(['customer', 'salesperson', 'items.medication']);
+
+        return view('salesperson.ventas.show', ['sale' => $sale]);
     }
 }

@@ -8,9 +8,11 @@
             <h1 class="text-2xl font-bold text-gray-900">Catálogo de Medicamentos</h1>
             <p class="text-gray-500 text-sm mt-1">Listado maestro del inventario.</p>
         </div>
+        @unless(auth()->user()->role === \App\Enums\UserRole::ADMINISTRATOR)
         <a href="{{ route('inventory-manager.catalogo.create') }}">
             <x-ui.button>Nuevo medicamento</x-ui.button>
         </a>
+        @endunless
     </div>
 
     @if (session('status'))
@@ -22,32 +24,31 @@
     <x-ui.card>
         <form method="GET" action="{{ route('inventory-manager.catalogo.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6">
             <x-ui.input name="search" label="Buscar" :value="$filters['search']" />
-            <div class="flex flex-col gap-1">
-                <label for="category" class="text-sm font-medium text-gray-700">Categoría</label>
-                <select name="category" id="category" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="">Todas</option>
-                    @foreach ($categorias as $cat)
-                        <option value="{{ $cat->value }}" @selected($filters['category'] === $cat->value)>{{ $cat->label() }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="flex flex-col gap-1">
-                <label for="supplier_id" class="text-sm font-medium text-gray-700">Proveedor</label>
-                <select name="supplier_id" id="supplier_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="">Todos</option>
-                    @foreach ($suppliers as $s)
-                        <option value="{{ $s->id }}" @selected((int) $filters['supplier_id'] === (int) $s->id)>{{ $s->company_name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="flex flex-col gap-1">
-                <label for="is_active" class="text-sm font-medium text-gray-700">Estado</label>
-                <select name="is_active" id="is_active" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="">Todos</option>
-                    <option value="1" @selected($filters['is_active'] === true)>Activos</option>
-                    <option value="0" @selected($filters['is_active'] === false)>Inactivos</option>
-                </select>
-            </div>
+            <x-ui.select
+                name="category"
+                label="Categoría"
+                placeholder="Todas"
+                :value="$filters['category']"
+                :options="collect($categorias)->map(fn($c) => ['value' => $c->value, 'label' => $c->label()])->all()"
+            />
+            <x-ui.select
+                name="supplier_id"
+                label="Proveedor"
+                placeholder="Todos"
+                searchable
+                :value="$filters['supplier_id']"
+                :options="collect($suppliers)->map(fn($s) => ['value' => $s->id, 'label' => $s->company_name])->all()"
+            />
+            <x-ui.select
+                name="is_active"
+                label="Estado"
+                placeholder="Todos"
+                :value="$filters['is_active'] === true ? '1' : ($filters['is_active'] === false ? '0' : '')"
+                :options="[
+                    ['value' => '1', 'label' => 'Activos'],
+                    ['value' => '0', 'label' => 'Inactivos'],
+                ]"
+            />
             <div class="flex items-end">
                 <x-ui.button type="submit" :block="true">Filtrar</x-ui.button>
             </div>
@@ -91,7 +92,9 @@
                         @endif
                     </td>
                     <td class="px-4 py-2 text-right">
+                        @unless(auth()->user()->role === \App\Enums\UserRole::ADMINISTRATOR)
                         <a href="{{ route('inventory-manager.catalogo.edit', $m) }}" class="text-sm text-primary hover:underline">Editar</a>
+                        @endunless
                     </td>
                 </tr>
             @empty

@@ -23,38 +23,23 @@
             @csrf
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="flex flex-col gap-1">
-                    <label for="medication_id" class="text-sm font-medium text-gray-700">Medicamento</label>
-                    <select name="medication_id" id="medication_id" required
-                            class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        <option value="">— Selecciona —</option>
-                        @foreach ($medicamentos as $m)
-                            <option value="{{ $m->id }}"
-                                @selected((int) old('medication_id', $preselected) === (int) $m->id)>
-                                {{ $m->name }} (stock: {{ $m->stock }})
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('medication_id')
-                        <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
+                <x-ui.select
+                    name="medication_id"
+                    label="Medicamento"
+                    placeholder="— Selecciona —"
+                    searchable
+                    :required="true"
+                    :value="$preselected"
+                    :options="collect($medicamentos)->map(fn($m) => ['value' => $m->id, 'label' => $m->name . ' (stock: ' . $m->stock . ')'])->all()"
+                />
 
-                <div class="flex flex-col gap-1">
-                    <label for="type" class="text-sm font-medium text-gray-700">Tipo de ajuste</label>
-                    <select name="type" id="type" required
-                            class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        @foreach ($tipos as $tipo)
-                            <option value="{{ $tipo->value }}"
-                                @selected(old('type', $defaultType) === $tipo->value)>
-                                {{ $tipo->label() }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('type')
-                        <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
+                <x-ui.select
+                    name="type"
+                    label="Tipo de ajuste"
+                    :required="true"
+                    :value="$defaultType"
+                    :options="collect($tipos)->map(fn($t) => ['value' => $t->value, 'label' => $t->label()])->all()"
+                />
             </div>
 
             <div class="mt-4">

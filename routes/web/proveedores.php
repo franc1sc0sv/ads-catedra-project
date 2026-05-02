@@ -6,14 +6,27 @@ use App\Http\Controllers\Web\InventoryManager\PedidoController;
 use App\Http\Controllers\Web\InventoryManager\ProveedorController;
 use Illuminate\Support\Facades\Route;
 
+// Read-only: both administrator and inventory_manager.
+Route::middleware(['auth', 'role:inventory_manager,administrator'])
+    ->prefix('inventory-manager')
+    ->name('inventory-manager.')
+    ->group(function (): void {
+        Route::get('proveedores', [ProveedorController::class, 'index'])
+            ->name('proveedores.index');
+
+        Route::get('pedidos', [PedidoController::class, 'index'])
+            ->name('pedidos.index');
+        Route::get('pedidos/{pedido}', [PedidoController::class, 'show'])
+            ->name('pedidos.show');
+    });
+
+// Write: only inventory_manager.
 Route::middleware(['auth', 'role:inventory_manager'])
     ->prefix('inventory-manager')
     ->name('inventory-manager.')
     ->group(function (): void {
 
         // Catálogo de proveedores
-        Route::get('proveedores', [ProveedorController::class, 'index'])
-            ->name('proveedores.index');
         Route::get('proveedores/create', [ProveedorController::class, 'create'])
             ->name('proveedores.create');
         Route::post('proveedores', [ProveedorController::class, 'store'])
@@ -28,14 +41,10 @@ Route::middleware(['auth', 'role:inventory_manager'])
             ->name('proveedores.destroy');
 
         // Pedidos a proveedores
-        Route::get('pedidos', [PedidoController::class, 'index'])
-            ->name('pedidos.index');
         Route::get('pedidos/create', [PedidoController::class, 'create'])
             ->name('pedidos.create');
         Route::post('pedidos', [PedidoController::class, 'store'])
             ->name('pedidos.store');
-        Route::get('pedidos/{pedido}', [PedidoController::class, 'show'])
-            ->name('pedidos.show');
         Route::patch('pedidos/{pedido}/send', [PedidoController::class, 'send'])
             ->name('pedidos.send');
         Route::patch('pedidos/{pedido}/cancel', [PedidoController::class, 'cancel'])

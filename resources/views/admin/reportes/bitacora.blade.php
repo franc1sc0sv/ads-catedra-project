@@ -14,18 +14,14 @@
         <x-ui.card>
             <form method="GET" action="{{ route('admin.reportes.bitacora.index') }}"
                   class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                <div class="flex flex-col gap-1">
-                    <label for="user_id" class="text-sm font-medium text-gray-700">Usuario</label>
-                    <select id="user_id" name="user_id"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                        <option value="">Todos</option>
-                        @foreach ($usuarios as $u)
-                            <option value="{{ $u->id }}" @selected((string) ($filters['user_id'] ?? '') === (string) $u->id)>
-                                {{ $u->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                <x-ui.select
+                    name="user_id"
+                    label="Usuario"
+                    placeholder="Todos"
+                    searchable
+                    :value="$filters['user_id'] ?? ''"
+                    :options="collect($usuarios)->map(fn($u) => ['value' => $u->id, 'label' => $u->name])->all()"
+                />
 
                 <x-ui.input name="action" label="Acción" :value="$filters['action'] ?? ''" placeholder="LOGIN_OK" />
                 <x-ui.input name="table_affected" label="Tabla" :value="$filters['table_affected'] ?? ''" placeholder="users" />

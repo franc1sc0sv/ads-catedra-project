@@ -9,6 +9,7 @@ use App\Enums\SaleStatus;
 use App\Models\InventoryMovement;
 use App\Models\Medication;
 use App\Models\Sale;
+use App\Services\Bitacora\Contracts\BitacoraServiceInterface;
 use App\Services\Inventario\Contracts\MedicamentoServiceInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -17,6 +18,10 @@ use Illuminate\Support\Facades\DB;
 
 final class MedicamentoService implements MedicamentoServiceInterface
 {
+    public function __construct(
+        private readonly BitacoraServiceInterface $bitacora,
+    ) {}
+
     public function listar(array $filters, int $perPage = 15): LengthAwarePaginator
     {
         $query = Medication::query()->with('supplier');
@@ -25,7 +30,8 @@ final class MedicamentoService implements MedicamentoServiceInterface
             $term = '%'.$filters['search'].'%';
             $query->where(function ($q) use ($term): void {
                 $q->where('name', 'like', $term)
-                    ->orWhere('barcode', 'like', $term);
+                    ->orWhere('barcode', 'like', $term)
+                    ->orWhere('description', 'like', $term);
             });
         }
 
@@ -74,6 +80,11 @@ final class MedicamentoService implements MedicamentoServiceInterface
                 ]);
             }
 
+            $this->bitacora->log('MEDICAMENTO_CREADO', Auth::id(), 'medications', (string) $medication->id, [
+                'name' => $medication->name,
+                'barcode' => $medication->barcode,
+            ]);
+
             return $medication;
         });
     }
@@ -99,6 +110,11 @@ final class MedicamentoService implements MedicamentoServiceInterface
         }
 
         $medication->save();
+
+        $this->bitacora->log('MEDICAMENTO_EDITADO', Auth::id(), 'medications', (string) $medication->id, [
+            'name' => $medication->name,
+            'barcode' => $medication->barcode,
+        ]);
 
         return $medication;
     }
@@ -127,6 +143,11 @@ final class MedicamentoService implements MedicamentoServiceInterface
             $locked->is_active = false;
             $locked->save();
 
+            $this->bitacora->log('MEDICAMENTO_DESACTIVADO', Auth::id(), 'medications', (string) $locked->id, [
+                'name' => $locked->name,
+                'barcode' => $locked->barcode,
+            ]);
+
             return $locked;
         });
     }
@@ -135,6 +156,11 @@ final class MedicamentoService implements MedicamentoServiceInterface
     {
         $medication->is_active = true;
         $medication->save();
+
+        $this->bitacora->log('MEDICAMENTO_ACTIVADO', Auth::id(), 'medications', (string) $medication->id, [
+            'name' => $medication->name,
+            'barcode' => $medication->barcode,
+        ]);
 
         return $medication;
     }

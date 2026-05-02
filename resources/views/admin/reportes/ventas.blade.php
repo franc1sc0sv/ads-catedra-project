@@ -25,43 +25,29 @@
                 <x-ui.input name="from" type="date" label="Desde" :value="$defaultFrom" />
                 <x-ui.input name="to" type="date" label="Hasta" :value="$defaultTo" />
 
-                <div class="flex flex-col gap-1">
-                    <label for="payment_method" class="text-sm font-medium text-gray-700">Método de pago</label>
-                    <select id="payment_method" name="payment_method"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        <option value="">Todos</option>
-                        @foreach ($paymentMethods as $m)
-                            <option value="{{ $m->value }}" @selected(($filters['payment_method'] ?? '') === $m->value)>
-                                {{ $m->label() }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                <x-ui.select
+                    name="payment_method"
+                    label="Método de pago"
+                    placeholder="Todos"
+                    :value="$filters['payment_method'] ?? ''"
+                    :options="collect($paymentMethods)->map(fn($m) => ['value' => $m->value, 'label' => $m->label()])->all()"
+                />
 
-                <div class="flex flex-col gap-1">
-                    <label for="salesperson_id" class="text-sm font-medium text-gray-700">Vendedor</label>
-                    <select id="salesperson_id" name="salesperson_id"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        <option value="">Todos</option>
-                        @foreach ($salespersons as $s)
-                            <option value="{{ $s->id }}" @selected((string) ($filters['salesperson_id'] ?? '') === (string) $s->id)>
-                                {{ $s->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                <x-ui.select
+                    name="salesperson_id"
+                    label="Vendedor"
+                    placeholder="Todos"
+                    searchable
+                    :value="$filters['salesperson_id'] ?? ''"
+                    :options="collect($salespersons)->map(fn($s) => ['value' => $s->id, 'label' => $s->name])->all()"
+                />
 
-                <div class="flex flex-col gap-1">
-                    <label for="status" class="text-sm font-medium text-gray-700">Estado</label>
-                    <select id="status" name="status"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        @foreach ($statuses as $st)
-                            <option value="{{ $st->value }}" @selected(($filters['status'] ?? \App\Enums\SaleStatus::COMPLETED->value) === $st->value)>
-                                {{ $st->label() }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                <x-ui.select
+                    name="status"
+                    label="Estado"
+                    :value="$filters['status'] ?? \App\Enums\SaleStatus::COMPLETED->value"
+                    :options="collect($statuses)->map(fn($st) => ['value' => $st->value, 'label' => $st->label()])->all()"
+                />
 
                 <div class="md:col-span-5 flex gap-2 justify-end">
                     <a href="{{ route('admin.reportes.ventas.index') }}">
@@ -123,7 +109,7 @@
                             <td class="px-4 py-3">{{ $venta->salesperson?->name ?? '—' }}</td>
                             <td class="px-4 py-3">{{ $venta->payment_method?->label() }}</td>
                             <td class="px-4 py-3">
-                                <x-ui.badge variant="{{ $venta->status === \App\Enums\SaleStatus::CANCELLED ? 'red' : 'green' }}">
+                                <x-ui.badge variant="{{ match($venta->status) { \App\Enums\SaleStatus::CANCELLED => 'red', \App\Enums\SaleStatus::PENDING => 'warning', default => 'green' } }}">
                                     {{ $venta->status?->label() }}
                                 </x-ui.badge>
                             </td>

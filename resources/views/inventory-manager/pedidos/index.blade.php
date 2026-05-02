@@ -38,31 +38,22 @@
 
     <x-ui.card>
         <form method="GET" action="{{ route('inventory-manager.pedidos.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6">
-            <div class="flex flex-col gap-1">
-                <label for="status" class="text-sm font-medium text-gray-700">Estado</label>
-                <select id="status" name="status"
-                    class="w-full border rounded-lg px-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50">
-                    <option value="">Todos</option>
-                    @foreach ($statuses as $st)
-                        <option value="{{ $st->value }}" @selected(($filters['status'] ?? null) === $st->value)>
-                            {{ $st->label() }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+            <x-ui.select
+                name="status"
+                label="Estado"
+                placeholder="Todos"
+                :value="$filters['status'] ?? ''"
+                :options="collect($statuses)->map(fn($st) => ['value' => $st->value, 'label' => $st->label()])->all()"
+            />
 
-            <div class="flex flex-col gap-1">
-                <label for="supplier_id" class="text-sm font-medium text-gray-700">Proveedor</label>
-                <select id="supplier_id" name="supplier_id"
-                    class="w-full border rounded-lg px-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50">
-                    <option value="">Todos</option>
-                    @foreach ($suppliers as $supplier)
-                        <option value="{{ $supplier->id }}" @selected((string)($filters['supplier_id'] ?? '') === (string)$supplier->id)>
-                            {{ $supplier->company_name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+            <x-ui.select
+                name="supplier_id"
+                label="Proveedor"
+                placeholder="Todos"
+                searchable
+                :value="$filters['supplier_id'] ?? ''"
+                :options="collect($suppliers)->map(fn($s) => ['value' => $s->id, 'label' => $s->company_name])->all()"
+            />
 
             <x-ui.input name="from" type="date" label="Desde" :value="$filters['from'] ?? null" />
             <x-ui.input name="to" type="date" label="Hasta" :value="$filters['to'] ?? null" />

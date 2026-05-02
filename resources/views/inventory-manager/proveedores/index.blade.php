@@ -75,12 +75,19 @@
                                     {{ $supplier->is_active ? 'Desactivar' : 'Activar' }}
                                 </x-ui.button>
                             </form>
-                            <form method="POST"
-                                  action="{{ route('inventory-manager.proveedores.destroy', $supplier) }}"
-                                  onsubmit="return confirm('¿Eliminar este proveedor?');">
+                            <form id="delete-supplier-{{ $supplier->id }}" method="POST"
+                                  action="{{ route('inventory-manager.proveedores.destroy', $supplier) }}">
                                 @csrf
                                 @method('DELETE')
-                                <x-ui.button type="submit" variant="danger" size="sm">Eliminar</x-ui.button>
+                                <x-ui.confirm
+                                    target-form="delete-supplier-{{ $supplier->id }}"
+                                    title="Eliminar proveedor"
+                                    message="¿Eliminar este proveedor? Esta acción no se puede deshacer."
+                                    confirm-label="Eliminar"
+                                    variant="danger"
+                                >
+                                    <x-ui.button type="button" variant="danger" size="sm">Eliminar</x-ui.button>
+                                </x-ui.confirm>
                             </form>
                         </div>
                     </td>

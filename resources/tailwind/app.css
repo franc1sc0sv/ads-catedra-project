@@ -13,3 +13,5 @@
     --color-coral:        #F97C7C;
     --font-sans:          'Poppins', sans-serif;
 }
+
+[x-cloak] { display: none !important; }

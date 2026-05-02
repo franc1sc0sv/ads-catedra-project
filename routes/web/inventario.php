@@ -56,6 +56,8 @@ Route::middleware(['auth', 'role:inventory_manager,administrator'])
     ->group(function (): void {
         Route::get('/movimientos', [MovimientoController::class, 'index'])
             ->name('inventory-manager.movimientos.index');
+        Route::get('/movimientos/global', [MovimientoController::class, 'global'])
+            ->name('inventory-manager.movimientos.global');
         Route::get('/medicamentos/{medicamento}/movimientos', [MovimientoController::class, 'index'])
             ->name('inventory-manager.movimientos.show');
     });

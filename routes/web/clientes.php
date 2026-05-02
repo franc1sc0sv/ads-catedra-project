@@ -19,9 +19,18 @@ Route::middleware(['auth', 'role:administrator,salesperson'])->group(function ()
 
     Route::get('/historial/{customer?}', [CustomerController::class, 'show'])
         ->name('salesperson.clientes.historial');
+
+    Route::patch('/clientes/{cliente}/frecuente', [CustomerController::class, 'toggleFrecuente'])
+        ->name('salesperson.clientes.frecuente');
+
+    Route::get('/ventas/{sale}', [CustomerController::class, 'showSale'])
+        ->name('salesperson.ventas.show');
 });
 
 Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::delete('/clientes/{cliente}', [CustomerController::class, 'destroy'])
         ->name('salesperson.clientes.destroy');
+
+    Route::patch('/clientes/{cliente}/reactivar', [CustomerController::class, 'reactivate'])
+        ->name('salesperson.clientes.reactivar');
 });

@@ -60,8 +60,12 @@
                     <td class="px-3 py-2 text-xs">{{ $mov->stock_before }} → {{ $mov->stock_after }}</td>
                     <td class="px-3 py-2 text-xs">{{ $mov->user?->name ?? '—' }}</td>
                     <td class="px-3 py-2 text-xs">
-                        @if ($mov->sale_id)
+                        @if ($mov->sale_id && \Illuminate\Support\Facades\Route::has('ventas.show'))
+                            <a href="{{ route('ventas.show', $mov->sale_id) }}" class="text-indigo-600 hover:underline">Venta #{{ $mov->sale_id }}</a>
+                        @elseif ($mov->sale_id)
                             Venta #{{ $mov->sale_id }}
+                        @elseif ($mov->purchase_order_id && \Illuminate\Support\Facades\Route::has('inventory-manager.pedidos.show'))
+                            <a href="{{ route('inventory-manager.pedidos.show', $mov->purchase_order_id) }}" class="text-indigo-600 hover:underline">Pedido #{{ $mov->purchase_order_id }}</a>
                         @elseif ($mov->purchase_order_id)
                             Pedido #{{ $mov->purchase_order_id }}
                         @else

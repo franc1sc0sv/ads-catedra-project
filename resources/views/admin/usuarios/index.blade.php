@@ -34,29 +34,25 @@
                         placeholder="Nombre o correo"
                     />
                 </div>
-                <div class="flex flex-col gap-1">
-                    <label for="role" class="text-sm font-medium text-gray-700">Rol</label>
-                    <select id="role" name="role"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                        <option value="todos">Todos</option>
-                        @foreach ($roles as $role)
-                            <option value="{{ $role->value }}"
-                                @selected(($filters['role'] ?? null) === $role->value)>
-                                {{ $role->label() }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label for="estado" class="text-sm font-medium text-gray-700">Estado</label>
-                    <select id="estado" name="estado"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                        @php $estado = $filters['estado'] ?? 'todos'; @endphp
-                        <option value="todos" @selected($estado === 'todos')>Todos</option>
-                        <option value="activos" @selected($estado === 'activos')>Activos</option>
-                        <option value="inactivos" @selected($estado === 'inactivos')>Inactivos</option>
-                    </select>
-                </div>
+                <x-ui.select
+                    name="role"
+                    label="Rol"
+                    :value="$filters['role'] ?? 'todos'"
+                    :options="array_merge(
+                        [['value' => 'todos', 'label' => 'Todos']],
+                        collect($roles)->map(fn($r) => ['value' => $r->value, 'label' => $r->label()])->all()
+                    )"
+                />
+                <x-ui.select
+                    name="estado"
+                    label="Estado"
+                    :value="$filters['estado'] ?? 'todos'"
+                    :options="[
+                        ['value' => 'todos', 'label' => 'Todos'],
+                        ['value' => 'activos', 'label' => 'Activos'],
+                        ['value' => 'inactivos', 'label' => 'Inactivos'],
+                    ]"
+                />
                 <div class="md:col-span-4 flex gap-2 justify-end">
                     <a href="{{ route('admin.usuarios.index') }}">
                         <x-ui.button type="button" variant="ghost">Limpiar</x-ui.button>

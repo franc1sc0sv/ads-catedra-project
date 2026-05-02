@@ -98,11 +98,18 @@
         <x-ui.card title="Acciones">
             <p class="text-sm text-gray-500 mb-3">{{ $medicamento->description ?? '—' }}</p>
             @if ($medicamento->is_active)
-                <form method="POST" action="{{ route('inventory-manager.catalogo.destroy', $medicamento) }}"
-                      onsubmit="return confirm('¿Desactivar este medicamento?');">
+                <form id="deactivate-medicamento-{{ $medicamento->id }}" method="POST" action="{{ route('inventory-manager.catalogo.destroy', $medicamento) }}">
                     @csrf
                     @method('DELETE')
-                    <x-ui.button type="submit" variant="danger" size="sm">Desactivar</x-ui.button>
+                    <x-ui.confirm
+                        target-form="deactivate-medicamento-{{ $medicamento->id }}"
+                        title="Desactivar medicamento"
+                        message="¿Desactivar este medicamento? Dejará de aparecer en ventas hasta que sea reactivado."
+                        confirm-label="Desactivar"
+                        variant="warning"
+                    >
+                        <x-ui.button type="button" variant="danger" size="sm">Desactivar</x-ui.button>
+                    </x-ui.confirm>
                 </form>
             @else
                 <form method="POST" action="{{ route('inventory-manager.catalogo.restore', $medicamento) }}">

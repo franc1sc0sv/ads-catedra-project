@@ -18,53 +18,46 @@
     <x-ui.card>
         <form method="GET" action="{{ route('reportes.inventario.index') }}"
               class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <div class="flex flex-col gap-1">
-                <label for="category" class="text-sm font-medium text-gray-700">Categoría</label>
-                <select id="category" name="category"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="">Todas</option>
-                    @foreach ($categories as $c)
-                        <option value="{{ $c->value }}" @selected(($filters['category'] ?? '') === $c->value)>
-                            {{ $c->label() }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+            <x-ui.select
+                name="category"
+                label="Categoría"
+                placeholder="Todas"
+                :value="$filters['category'] ?? ''"
+                :options="collect($categories)->map(fn($c) => ['value' => $c->value, 'label' => $c->label()])->all()"
+            />
 
-            <div class="flex flex-col gap-1">
-                <label for="supplier_id" class="text-sm font-medium text-gray-700">Proveedor</label>
-                <select id="supplier_id" name="supplier_id"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="">Todos</option>
-                    @foreach ($suppliers as $s)
-                        <option value="{{ $s->id }}" @selected((string) ($filters['supplier_id'] ?? '') === (string) $s->id)>
-                            {{ $s->company_name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+            <x-ui.select
+                name="supplier_id"
+                label="Proveedor"
+                placeholder="Todos"
+                searchable
+                :value="$filters['supplier_id'] ?? ''"
+                :options="collect($suppliers)->map(fn($s) => ['value' => $s->id, 'label' => $s->company_name])->all()"
+            />
 
-            <div class="flex flex-col gap-1">
-                <label for="stock_state" class="text-sm font-medium text-gray-700">Estado de stock</label>
-                <select id="stock_state" name="stock_state"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="">Todos</option>
-                    <option value="normal" @selected(($filters['stock_state'] ?? '') === 'normal')>Normal</option>
-                    <option value="low" @selected(($filters['stock_state'] ?? '') === 'low')>Bajo mínimo</option>
-                    <option value="zero" @selected(($filters['stock_state'] ?? '') === 'zero')>En cero</option>
-                    <option value="expired" @selected(($filters['stock_state'] ?? '') === 'expired')>Vencidos</option>
-                </select>
-            </div>
+            <x-ui.select
+                name="stock_state"
+                label="Estado de stock"
+                placeholder="Todos"
+                :value="$filters['stock_state'] ?? ''"
+                :options="[
+                    ['value' => 'normal', 'label' => 'Normal'],
+                    ['value' => 'low', 'label' => 'Bajo mínimo'],
+                    ['value' => 'zero', 'label' => 'En cero'],
+                    ['value' => 'expired', 'label' => 'Vencidos'],
+                ]"
+            />
 
-            <div class="flex flex-col gap-1">
-                <label for="expiry_window_days" class="text-sm font-medium text-gray-700">Ventana vencimiento</label>
-                <select id="expiry_window_days" name="expiry_window_days"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="30" @selected($window === 30)>30 días</option>
-                    <option value="60" @selected($window === 60)>60 días</option>
-                    <option value="90" @selected($window === 90)>90 días</option>
-                </select>
-            </div>
+            <x-ui.select
+                name="expiry_window_days"
+                label="Ventana vencimiento"
+                :value="(string) $window"
+                :options="[
+                    ['value' => '30', 'label' => '30 días'],
+                    ['value' => '60', 'label' => '60 días'],
+                    ['value' => '90', 'label' => '90 días'],
+                ]"
+            />
 
             <div class="md:col-span-4 flex gap-2 justify-end">
                 <a href="{{ route('reportes.inventario.index') }}">

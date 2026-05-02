@@ -26,32 +26,25 @@
         :value="$medicamento?->expires_at?->format('Y-m-d')"
         :required="true"
     />
-    <div class="flex flex-col gap-1">
-        <label for="category" class="text-sm font-medium text-gray-700">Categoría</label>
-        <select name="category" id="category" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" required>
-            @foreach ($categorias as $cat)
-                <option value="{{ $cat->value }}" @selected(old('category', $medicamento?->category?->value) === $cat->value)>{{ $cat->label() }}</option>
-            @endforeach
-        </select>
-        @error('category')
-            <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
-        @enderror
-    </div>
+    <x-ui.select
+        name="category"
+        label="Categoría"
+        :value="$medicamento?->category?->value"
+        :required="true"
+        :options="collect($categorias)->map(fn($c) => ['value' => $c->value, 'label' => $c->label()])->all()"
+    />
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-    <div class="flex flex-col gap-1">
-        <label for="supplier_id" class="text-sm font-medium text-gray-700">Proveedor</label>
-        <select name="supplier_id" id="supplier_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" required>
-            <option value="">— Selecciona —</option>
-            @foreach ($suppliers as $s)
-                <option value="{{ $s->id }}" @selected((int) old('supplier_id', $medicamento?->supplier_id) === (int) $s->id)>{{ $s->company_name }}</option>
-            @endforeach
-        </select>
-        @error('supplier_id')
-            <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
-        @enderror
-    </div>
+    <x-ui.select
+        name="supplier_id"
+        label="Proveedor"
+        placeholder="— Selecciona —"
+        searchable
+        :value="$medicamento?->supplier_id"
+        :required="true"
+        :options="collect($suppliers)->map(fn($s) => ['value' => $s->id, 'label' => $s->company_name])->all()"
+    />
     @if ($mode === 'edit')
         <div class="flex flex-col gap-1">
             <label class="text-sm font-medium text-gray-700">Estado</label>

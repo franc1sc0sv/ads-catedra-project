@@ -34,21 +34,13 @@
                     :required="true"
                 />
 
-                <div class="flex flex-col gap-1">
-                    <label for="role" class="text-sm font-medium text-gray-700">Rol</label>
-                    <select id="role" name="role"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                        @foreach ($roles as $role)
-                            <option value="{{ $role->value }}"
-                                @selected(old('role', $usuario->role->value) === $role->value)>
-                                {{ $role->label() }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('role')
-                        <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
+                <x-ui.select
+                    name="role"
+                    label="Rol"
+                    :value="$usuario->role->value"
+                    :required="true"
+                    :options="collect($roles)->map(fn($r) => ['value' => $r->value, 'label' => $r->label()])->all()"
+                />
 
                 <div class="flex justify-end gap-2 pt-2">
                     <a href="{{ route('admin.usuarios.index') }}">

@@ -5,8 +5,6 @@
 <div class="max-w-6xl mx-auto py-6 px-4">
     <form action="{{ route('salesperson.ventas.store') }}" method="POST" id="pos-form">
         @csrf
-        <input type="hidden" name="payment_method" value="cash">
-
         @if ($errors->any())
             <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
                 <ul class="list-disc list-inside">
@@ -29,18 +27,27 @@
             <div class="lg:col-span-2 space-y-6">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h2 class="text-lg font-bold mb-4">Productos</h2>
-                    <div class="flex gap-4 mb-6">
-                        <select id="product-picker" class="flex-1 rounded-lg border-gray-300">
-                            <option value="">Seleccionar medicamento...</option>
-                            @foreach($medications as $med)
-                                <option value="{{ $med->id }}"
-                                    data-price="{{ $med->price }}"
-                                    data-stock="{{ $med->stock }}"
-                                    data-controlled="{{ $med->category->requiresPrescription() ? 1 : 0 }}">
-                                    {{ $med->name }} (${{ $med->price }})
-                                </option>
-                            @endforeach
-                        </select>
+                    <div class="flex gap-4 mb-6 items-end">
+                        <div class="flex-1">
+                            <x-ui.select
+                                name="product-picker"
+                                placeholder="Seleccionar medicamento..."
+                                searchable
+                                no-submit
+                                :options="$medications->map(fn($med) => [
+                                    'value' => $med->id,
+                                    'label' => $med->name . ' ($' . $med->price . ')',
+                                    'data'  => [
+                                        'price'      => $med->price,
+                                        'stock'      => $med->stock,
+                                        'controlled' => $med->category->requiresPrescription() ? 1 : 0,
+                                    ],
+                                    'badge' => $med->category->requiresPrescription()
+                                        ? ['label' => 'Receta', 'variant' => 'warning']
+                                        : null,
+                                ])->all()"
+                            />
+                        </div>
                         <button type="button" onclick="addItem()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold">Añadir</button>
                     </div>
 
@@ -64,17 +71,14 @@
                     <h2 class="text-lg font-bold mb-4">Resumen de Venta</h2>
 
                     <div class="space-y-4">
-                        <div>
-                            <label class="text-xs font-bold text-gray-400 uppercase" for="customer_id">Cliente</label>
-                            <select id="customer_id" name="customer_id" class="w-full rounded-lg border-gray-300" {{ $allowAnonymous ? '' : 'required' }}>
-                                @if ($allowAnonymous)
-                                    <option value="">— Cliente anónimo —</option>
-                                @endif
-                                @foreach($customers as $customer)
-                                    <option value="{{ $customer->id }}" @selected(old('customer_id') == $customer->id)>{{ $customer->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                        <x-ui.select
+                            name="customer_id"
+                            label="Cliente"
+                            :placeholder="$allowAnonymous ? '— Cliente anónimo —' : 'Seleccionar cliente...'"
+                            :required="!$allowAnonymous"
+                            searchable
+                            :options="$customers->map(fn($c) => ['value' => $c->id, 'label' => $c->name])->all()"
+                        />
 
                         <div>
                             <label class="text-xs font-bold text-gray-400 uppercase" for="sold_at">Fecha de venta</label>
@@ -123,12 +127,30 @@
     const TAX_RATE = {{ (float) setting('tasa_iva', 0.13) }};
     let cart = [];
 
+    document.getElementById('pos-form').addEventListener('submit', function (e) {
+        if (cart.length === 0) {
+            e.preventDefault();
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Agrega al menos un producto', variant: 'warning' } }));
+            return;
+        }
+        for (const item of cart) {
+            if (item.qty > item.stock) {
+                e.preventDefault();
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: `Stock insuficiente para: ${item.name} (disponible: ${item.stock})`, variant: 'error' } }));
+                return;
+            }
+        }
+    });
+
     function addItem() {
         const picker = document.getElementById('product-picker');
         const opt = picker.options[picker.selectedIndex];
         if (!opt.value) return;
 
-        if (cart.find(i => i.id === opt.value)) return alert('Ya está en el carrito');
+        if (cart.find(i => i.id === opt.value)) {
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Ya está en el carrito', variant: 'warning' } }));
+            return;
+        }
 
         cart.push({
             id: opt.value,
@@ -172,7 +194,10 @@
                         <input type="hidden" name="items[${index}][quantity]" value="${item.qty}">
                     </td>
                     <td class="text-center">
-                        <input type="number" onchange="updateQty('${item.id}', this.value)" value="${item.qty}" class="w-16 border-gray-200 rounded text-center">
+                        <div class="flex flex-col items-center">
+                            <input type="number" oninput="updateQty('${item.id}', this.value)" value="${item.qty}" min="1" max="${item.stock}" class="w-16 border-gray-200 rounded text-center">
+                            <span class="text-[10px] text-gray-400 mt-0.5">Máx: ${item.stock}</span>
+                        </div>
                     </td>
                     <td class="text-right font-mono font-bold">$${sub.toFixed(2)}</td>
                     <td class="text-right"><button type="button" onclick="removeItem('${item.id}')" class="text-red-400 hover:text-red-600 font-bold ml-4">×</button></td>
@@ -185,6 +210,11 @@
         document.getElementById('subtotal-display').innerText = `$${subtotal.toFixed(2)}`;
         document.getElementById('tax-display').innerText = `$${tax.toFixed(2)}`;
         document.getElementById('total-display').innerText = `$${total.toFixed(2)}`;
+
+        // Sync hidden inputs with current cart state before submit
+        document.querySelectorAll('#cart-table tbody [name$="[quantity]"]').forEach((hidden, i) => {
+            hidden.value = cart[i].qty;
+        });
 
         // Validación dinámica de campos médicos
         const medicalDiv = document.getElementById('medical-fields');

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Web\Clientes;
 
 use App\Exceptions\Clientes\DuplicateIdentificationException;
+use App\Exceptions\Clientes\InactiveCustomerException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Clientes\QuickCreateCustomerRequest;
 use App\Services\Clientes\Contracts\CustomerServiceInterface;
@@ -30,6 +31,14 @@ class CustomerSearchController extends Controller
     {
         try {
             $customer = $this->customerService->quickCreate($request->validated());
+        } catch (InactiveCustomerException $e) {
+            return response()->json([
+                'inactive_customer' => [
+                    'id' => $e->customer->id,
+                    'name' => $e->customer->name,
+                    'identification' => $e->customer->identification,
+                ],
+            ], 409);
         } catch (DuplicateIdentificationException $e) {
             return response()->json(
                 ['errors' => ['identificacion_duplicada' => [$e->getMessage()]]],

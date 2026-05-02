@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     {{-- Scripts y Estilos --}}
+    <x-ui._alpine-bootstrap />
     <script src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js" defer></script>
     @vite(['resources/tailwind/app.css'])
 </head>
@@ -49,5 +50,7 @@
         {{-- Contenido de las páginas --}}
         @yield('content')
     </main>
+
+    <x-ui.toast />
 </body>
 </html>

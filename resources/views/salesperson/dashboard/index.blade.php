@@ -38,8 +38,11 @@
                             <td class="py-4 px-4 text-sm">{{ $sale->customer?->name ?? 'Cliente anónimo' }}</td>
                             <td class="py-4 px-4 text-sm font-bold">${{ number_format($sale->total, 2) }}</td>
                             <td class="py-4 px-4">
-                                <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase
-                                    {{ $sale->status === \App\Enums\SaleStatus::CANCELLED ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
+                                <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase {{ match($sale->status) {
+                                    \App\Enums\SaleStatus::CANCELLED => 'bg-red-100 text-red-700',
+                                    \App\Enums\SaleStatus::PENDING   => 'bg-orange-100 text-orange-700',
+                                    default                          => 'bg-green-100 text-green-700',
+                                } }}">
                                     {{ $sale->status->label() }}
                                 </span>
                             </td>
@@ -47,7 +50,7 @@
                                 {{ $sale->created_at->timezone('America/El_Salvador')->format('d/m/Y h:i A') }}
                             </td>
                             <td class="py-4 px-4 text-right">
-                                @if($sale->status !== \App\Enums\SaleStatus::CANCELLED)
+                                @if($sale->status === \App\Enums\SaleStatus::PENDING)
                                     <button type="button"
                                             @click="saleId = {{ $sale->id }}; action = '{{ route('salesperson.ventas.cancel', $sale->id) }}'; open = true"
                                             class="text-red-500 hover:text-red-700 text-[10px] font-bold uppercase">

@@ -4,6 +4,7 @@
 
 @section('content')
     <div class="mb-6">
+        <a href="{{ url()->previous(route('admin.reportes.movimientos.index')) }}" class="text-sm text-indigo-600 hover:underline mb-2 inline-block">← Volver</a>
         <h1 class="text-2xl font-bold text-gray-900">Historial de movimientos</h1>
         <p class="text-gray-500 text-sm mt-1">{{ $medicamento->name }} · stock actual: {{ $medicamento->stock }}</p>
     </div>
@@ -55,8 +56,12 @@
                     <td class="px-3 py-2 text-xs">{{ $mov->stock_before }} → {{ $mov->stock_after }}</td>
                     <td class="px-3 py-2 text-xs">{{ $mov->user?->name ?? '—' }}</td>
                     <td class="px-3 py-2 text-xs">
-                        @if ($mov->sale_id)
+                        @if ($mov->sale_id && \Illuminate\Support\Facades\Route::has('ventas.show'))
+                            <a href="{{ route('ventas.show', $mov->sale_id) }}" class="text-indigo-600 hover:underline">Venta #{{ $mov->sale_id }}</a>
+                        @elseif ($mov->sale_id)
                             Venta #{{ $mov->sale_id }}
+                        @elseif ($mov->purchase_order_id && \Illuminate\Support\Facades\Route::has('inventory-manager.pedidos.show'))
+                            <a href="{{ route('inventory-manager.pedidos.show', $mov->purchase_order_id) }}" class="text-indigo-600 hover:underline">Pedido #{{ $mov->purchase_order_id }}</a>
                         @elseif ($mov->purchase_order_id)
                             Pedido #{{ $mov->purchase_order_id }}
                         @else
