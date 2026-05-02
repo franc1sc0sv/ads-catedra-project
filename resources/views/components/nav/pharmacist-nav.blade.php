@@ -1,8 +1,8 @@
 @php
     $links = [
         ['label' => 'Dashboard',       'route' => 'pharmacist.dashboard'],
-        ['label' => 'Cola de recetas', 'route' => 'pharmacist.recetas.index'],
-        ['label' => 'Historial',       'route' => 'pharmacist.recetas.historial'],
+        ['label' => 'Cola de recetas', 'route' => 'pharmacist.queue'], // Cambiado para que coincida con tu web.php
+        ['label' => 'Historial',       'route' => 'pharmacist.history'], 
     ];
 @endphp
 
@@ -18,11 +18,11 @@
                 @foreach ($links as $link)
                     @if (\Illuminate\Support\Facades\Route::has($link['route']))
                         <a href="{{ route($link['route']) }}"
-                           class="px-3 py-2 rounded-md text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                           class="px-3 py-2 rounded-md text-sm transition-colors {{ request()->routeIs($link['route']) ? 'bg-white/20 text-white' : 'text-white/80 hover:text-white hover:bg-white/10' }}">
                             {{ $link['label'] }}
                         </a>
                     @else
-                        <span class="px-3 py-2 rounded-md text-sm text-white/40 cursor-not-allowed disabled" aria-disabled="true">
+                        <span class="px-3 py-2 rounded-md text-sm text-white/30 cursor-not-allowed" title="Ruta no definida">
                             {{ $link['label'] }}
                         </span>
                     @endif
@@ -47,18 +47,24 @@
         </div>
     </div>
 
+    {{-- Menú móvil --}}
     <div x-show="open" x-cloak class="md:hidden bg-primary/95 px-4 pb-4 space-y-1">
         @foreach ($links as $link)
             @if (\Illuminate\Support\Facades\Route::has($link['route']))
-                <a href="{{ route($link['route']) }}" class="block px-3 py-2 rounded-md text-sm text-white/80 hover:bg-white/10">{{ $link['label'] }}</a>
+                <a href="{{ route($link['route']) }}" 
+                   class="block px-3 py-2 rounded-md text-sm {{ request()->routeIs($link['route']) ? 'bg-white/20 text-white' : 'text-white/80' }}">
+                   {{ $link['label'] }}
+                </a>
             @else
-                <span class="block px-3 py-2 rounded-md text-sm text-white/40 disabled">{{ $link['label'] }}</span>
+                <span class="block px-3 py-2 rounded-md text-sm text-white/40 cursor-not-allowed">{{ $link['label'] }}</span>
             @endif
         @endforeach
-        <p class="text-white/70 text-sm py-2">{{ auth()->user()->name }}</p>
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit" class="text-white/80 text-sm hover:text-white">Cerrar sesión</button>
-        </form>
+        <div class="border-t border-white/10 mt-2 pt-2">
+            <p class="text-white/70 text-sm px-3 mb-2">{{ auth()->user()->name }}</p>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="block w-full text-left px-3 py-2 text-white/80 text-sm hover:text-white">Cerrar sesión</button>
+            </form>
+        </div>
     </div>
 </nav>
